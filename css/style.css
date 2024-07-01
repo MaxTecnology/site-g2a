@@ -164,7 +164,7 @@ span.desc {
 }
 
 .logo-w3layouts-agileits i.fa {
-  color: #76daff;
+  color: #0caad1;
 }
 
 /*-- header --*/
@@ -264,8 +264,8 @@ span.desc {
 }
 
 .carousel-caption a:hover {
-  background: #ee4f4f;
-  border: 1px solid #ee4f4f;
+  background: #0caad1;
+  border: 1px solid #0caad1;
 }
 
 .codes {
@@ -274,7 +274,7 @@ span.desc {
 }
 
 .codes.agileitsbg2 {
-  background: #e74c3c;
+  background: #0caad1;
   background-image: -webkit-linear-gradient(#ff9d2f, #ff6126);
   background-image: -moz-linear-gradient(#ff9d2f, #ff6126);
   background-image: -ms-linear-gradient(#ff9d2f, #ff6126);
@@ -343,8 +343,8 @@ span.desc {
   width: 12px;
   height: 12px;
   margin: 0px 4px;
-  border: 2px solid #ff3c41;
-  background: #ff3c41;
+  border: 2px solid #0caad1;
+  background: #0caad1;
 }
 
 /* Show it is fixed to the top */
@@ -372,13 +372,13 @@ span.desc {
 }
 
 a.act {
-  border: solid 2px #ff3c41;
-  background-color: #ff3c41;
+  border: solid 2px #0caad1;
+  background-color: #0caad1;
 }
 
 .bnr-button a:hover {
-  border: solid 2px #ff3c41;
-  background-color: #ff3c41;
+  border: solid 2px #0caad1;
+  background-color: #0caad1;
 }
 
 a.two.scroll {
@@ -724,7 +724,7 @@ a.blog-btn {
 }
 
 a.blog-btn:hover {
-  background: #ff3c41;
+  background: #0caad1;
   color: #fff;
 }
 
@@ -802,8 +802,8 @@ ol.carousel-indicators.two {
   width: 12px;
   height: 12px;
   margin: 0 2px;
-  background: #ee4f4f;
-  border: 1px solid #ee4f4f;
+  background: #0caad1;
+  border: 1px solid #80cff0;
 }
 
 #quote-carousel img {
@@ -829,7 +829,7 @@ ol.carousel-indicators.two {
   font-family: "Fontawesome";
   float: left;
   margin-right: 10px;
-  color: #ff3c41;
+  color: #0caad1;
   font-size: 2em;
 }
 
@@ -975,7 +975,7 @@ a.b-home {
 }
 
 a.b-home:hover {
-  background: #ff3c41;
+  background: #0caad1;
 }
 
 .error-404 p {
@@ -1036,7 +1036,7 @@ button.btn1 {
 }
 
 button.btn1:hover {
-  background: #ff3c41;
+  background: #0caad1;
 }
 
 @media (max-width: 640px) {
@@ -1279,7 +1279,12 @@ p.reg {
   background: #080808;
 }
 
-.footer_inner_info_w3ls_agileits {
+.img-logo {
+  width: 175px;
+  height: auto;
+}
+
+.footer .footer_inner_info_w3ls_agileits {
   width: 90%;
   margin: 0 auto;
 }
