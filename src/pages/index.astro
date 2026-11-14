@@ -1,11 +1,12 @@
 ---
 import Base from '../layouts/Base.astro';
 import ReguaReforma from '../components/ReguaReforma.astro';
+import LinhaReforma from '../components/LinhaReforma.astro';
 import ListaAvisos from '../components/ListaAvisos.astro';
 import { site, servicos, numeros, whatsappLink } from '../data/site';
 import { listarAvisos } from '../lib/directus';
 
-// Renderizada sob demanda para mostrar os avisos mais recentes e a régua no dia certo.
+// Renderizada sob demanda para mostrar os avisos mais recentes e a linha no dia certo.
 export const prerender = false;
 
 const { avisos } = await listarAvisos({ limite: 3 });
@@ -17,20 +18,38 @@ const etapas = [
   { titulo: 'Proposta', texto: 'Você recebe por escrito o que fazemos, os prazos e o honorário mensal.' },
   { titulo: 'Transição', texto: 'Pedimos os arquivos ao contador anterior e assumimos sem deixar nenhuma competência para trás.' },
 ];
+
+const ferramentas = [
+  {
+    href: '/reforma-tributaria#diagnostico',
+    titulo: 'A sua empresa está pronta para a reforma?',
+    texto: 'Oito perguntas sobre nota fiscal, cadastro, preço e contratos. No fim, a lista do que falta ajustar, em ordem de prioridade.',
+    acao: 'Fazer o diagnóstico',
+  },
+  {
+    href: '/controle-de-jornada',
+    titulo: 'Planeje a jornada sem a escala 6x1',
+    texto: 'Importe a planilha da equipe e veja quem precisa mudar de escala, quantas horas reduzir e a sugestão de nova semana.',
+    acao: 'Abrir o controle de jornada',
+  },
+];
+
+// Numbers only go live when all of them are real; in dev the placeholders show with a dashed outline.
 const dev = import.meta.env.DEV;
+const mostrarNumeros = dev || numeros.every((n) => !n.placeholder);
 ---
 
 <Base
   titulo={site.nome}
   descricao="Escritório de contabilidade em Arapiraca - AL. Contabilidade, fiscal, departamento pessoal, abertura de empresas e planejamento para a Reforma Tributária."
 >
-  <section class="bg-navy text-white">
-    <div class="container-g2a pt-16 pb-14 md:pt-24 md:pb-20">
-      <div class="max-w-4xl">
-        <h1 class="titulo text-[2.75rem] sm:text-6xl lg:text-[5.25rem]">
+  <section class="overflow-hidden bg-navy text-white">
+    <div class="container-g2a grid items-center gap-x-12 gap-y-14 pt-16 pb-16 md:pt-24 lg:grid-cols-[1.05fr_1fr] lg:pb-24">
+      <div>
+        <h1 class="titulo text-[2.75rem] sm:text-6xl xl:text-[4.75rem]">
           Sua empresa em dia hoje e pronta para a Reforma Tributária.
         </h1>
-        <p class="mt-7 max-w-2xl text-lg text-white/80 md:text-xl">
+        <p class="mt-7 max-w-xl text-lg text-white/80 md:text-xl">
           Somos um escritório de contabilidade em Arapiraca. Cuidamos dos impostos, da folha e da legalização de empresas
           do Simples Nacional ao Lucro Real, em todo o agreste e sertão de Alagoas.
         </p>
@@ -44,9 +63,10 @@ const dev = import.meta.env.DEV;
         </div>
       </div>
 
-      <div class="mt-16 md:mt-24">
-        <ReguaReforma />
-        <p class="mt-8">
+      <div>
+        <div class="hidden lg:block"><LinhaReforma /></div>
+        <div class="lg:hidden"><ReguaReforma /></div>
+        <p class="mt-8 lg:mt-4 lg:pl-[6%]">
           <a href="/reforma-tributaria" class="font-semibold text-ceu underline decoration-ceu/40 underline-offset-4 hover:decoration-ceu">
             O que muda para a sua empresa em cada etapa
           </a>
@@ -66,11 +86,18 @@ const dev = import.meta.env.DEV;
     <ul class="divide-y divide-pedra border-y border-pedra">
       {
         servicos.map((s) => (
-          <li class="py-8">
-            <h3 class="titulo-medio text-2xl text-navy md:text-[1.75rem]">{s.nome}</h3>
-            <p class="mt-2.5 max-w-[60ch] text-cinza">{s.resumo}</p>
-            <a href={`/servicos/${s.slug}`} class="mt-4 inline-block font-semibold text-ciano-escuro underline decoration-ciano/30 underline-offset-4 hover:decoration-ciano">
-              Ver o que está incluído
+          <li>
+            <a href={`/servicos/${s.slug}`} class="group grid gap-x-8 py-8 sm:grid-cols-[1fr_auto] sm:items-center">
+              <span>
+                <span class="titulo-medio block text-2xl text-navy md:text-[1.75rem]">{s.nome}</span>
+                <span class="mt-2.5 block max-w-[60ch] text-cinza">{s.resumo}</span>
+              </span>
+              <span class="mt-4 inline-flex items-center gap-2 font-semibold text-ciano-escuro sm:mt-0">
+                <span class="sm:sr-only">Ver o que está incluído</span>
+                <svg viewBox="0 0 24 24" class="size-7 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1 motion-reduce:transition-none" fill="none" stroke="currentColor" stroke-width="3.2" aria-hidden="true">
+                  <path d="M6 18 18 6M9 6h9v9" />
+                </svg>
+              </span>
             </a>
           </li>
         ))
@@ -78,18 +105,47 @@ const dev = import.meta.env.DEV;
     </ul>
   </section>
 
-  <section class="bg-pedra">
-    <div class="container-g2a grid grid-cols-2 gap-x-6 gap-y-10 py-16 lg:grid-cols-4">
-      {
-        numeros.map((n) => (
-          <div class:list={[dev && n.placeholder && 'rounded outline-2 outline-offset-4 outline-amber-500 outline-dashed']}>
-            <p class="numero text-6xl text-navy md:text-7xl">{n.valor}</p>
-            <p class="mt-3 max-w-[18ch] text-cinza">{n.rotulo}</p>
-          </div>
-        ))
-      }
+  <section class="bg-pedra" aria-labelledby="ferramentas-titulo">
+    <div class="container-g2a py-20 md:py-24">
+      <div class="max-w-2xl">
+        <h2 id="ferramentas-titulo" class="titulo text-4xl text-navy md:text-5xl">Ferramentas gratuitas para o empresário</h2>
+        <p class="mt-4 text-cinza">Feitas pela nossa equipe para as duas mudanças que mais chegam ao escritório. Não pedem cadastro.</p>
+      </div>
+      <ul class="mt-12 grid gap-px overflow-hidden rounded-lg bg-navy/10 md:grid-cols-2">
+        {
+          ferramentas.map((f) => (
+            <li class="bg-white">
+              <a href={f.href} class="group flex h-full flex-col p-8 md:p-10">
+                <span class="titulo-medio block text-3xl text-navy">{f.titulo}</span>
+                <span class="mt-4 block max-w-[46ch] text-cinza">{f.texto}</span>
+                <span class="mt-auto inline-flex items-center gap-2 pt-8 font-semibold text-ciano-escuro">
+                  {f.acao}
+                  <svg viewBox="0 0 24 24" class="size-5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
+                    <path d="M6 18 18 6M9 6h9v9" />
+                  </svg>
+                </span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
     </div>
   </section>
+
+  {
+    mostrarNumeros && (
+      <section class="border-b border-pedra">
+        <div class="container-g2a grid grid-cols-2 gap-x-6 gap-y-10 py-16 lg:grid-cols-4">
+          {numeros.map((n) => (
+            <div class:list={[dev && n.placeholder && 'rounded outline-2 outline-offset-4 outline-amber-500 outline-dashed']}>
+              <p class="numero text-6xl text-navy md:text-7xl">{n.valor}</p>
+              <p class="mt-3 max-w-[18ch] text-cinza">{n.rotulo}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    )
+  }
 
   {
     avisos.length > 0 && (
@@ -113,12 +169,14 @@ const dev = import.meta.env.DEV;
   <section class:list={[avisos.length > 0 && 'border-t border-pedra']}>
     <div class="container-g2a py-20 md:py-28">
       <h2 class="titulo max-w-3xl text-4xl text-navy md:text-5xl">Trocar de contador leva menos tempo do que parece</h2>
-      <ol class="mt-12 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+      <ol class="etapas mt-14 grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-0">
         {
           etapas.map((e, i) => (
-            <li>
-              <p class="numero text-5xl text-ciano" aria-hidden="true">{i + 1}</p>
-              <h3 class="mt-4 text-lg font-semibold text-navy">{e.titulo}</h3>
+            <li class="relative lg:pr-8">
+              <span class="etapa-marca" aria-hidden="true">
+                <span class="numero text-3xl text-navy">{i + 1}</span>
+              </span>
+              <h3 class="mt-5 text-lg font-semibold text-navy">{e.titulo}</h3>
               <p class="mt-1.5 text-cinza">{e.texto}</p>
             </li>
           ))
@@ -127,20 +185,52 @@ const dev = import.meta.env.DEV;
     </div>
   </section>
 
-  <section class="container-g2a grid gap-10 py-20 md:py-24 lg:grid-cols-[1.5fr_1fr] lg:items-end">
-    <div>
-      <h2 class="titulo text-4xl text-navy md:text-6xl">Vamos conversar sobre a sua empresa?</h2>
-      <p class="mt-5 max-w-xl text-lg text-cinza">
-        Atendemos pelo WhatsApp, por e-mail e no escritório, no bairro Novo Horizonte, em Arapiraca.
-      </p>
-    </div>
-    <div class="flex flex-col gap-3">
-      <a href={whatsappLink()} target="_blank" rel="noopener" class="rounded-md bg-navy px-6 py-4 text-center font-semibold text-white transition-colors hover:bg-navy-deep">
-        Chamar no WhatsApp {site.telefoneExibicao}
-      </a>
-      <a href="/contato" class="rounded-md px-6 py-4 text-center font-semibold text-navy ring-1 ring-navy/20 transition-colors hover:bg-pedra">
-        Ver endereço e outros contatos
-      </a>
+  <section class="bg-navy text-white">
+    <div class="container-g2a grid gap-10 py-20 md:py-24 lg:grid-cols-[1.5fr_1fr] lg:items-end">
+      <div>
+        <h2 class="titulo text-4xl md:text-6xl">Vamos conversar sobre a sua empresa?</h2>
+        <p class="mt-5 max-w-xl text-lg text-white/75">
+          Atendemos pelo WhatsApp, por e-mail e no escritório, no bairro Novo Horizonte, em Arapiraca.
+        </p>
+      </div>
+      <div class="flex flex-col gap-3">
+        <a href={whatsappLink()} target="_blank" rel="noopener" class="rounded-md bg-ciano px-6 py-4 text-center font-semibold text-navy-deep transition-colors hover:bg-ceu">
+          Chamar no WhatsApp {site.telefoneExibicao}
+        </a>
+        <a href="/contato" class="rounded-md px-6 py-4 text-center font-semibold text-white ring-1 ring-white/25 transition-colors hover:bg-white/10">
+          Ver endereço e outros contatos
+        </a>
+      </div>
     </div>
   </section>
 </Base>
+
+<style>
+  /* The four steps sit on one thick line, the same stroke as the logo and the hero graphic. */
+  .etapa-marca {
+    display: grid;
+    place-items: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 999px;
+    background: white;
+    box-shadow: inset 0 0 0 6px var(--color-ciano);
+    position: relative;
+    z-index: 1;
+  }
+  @media (width >= 64rem) {
+    .etapas li::before {
+      content: '';
+      position: absolute;
+      top: calc(1.75rem - 3px);
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: var(--color-ciano);
+    }
+    .etapas li:last-child::before {
+      right: auto;
+      width: 1.75rem;
+    }
+  }
+</style>

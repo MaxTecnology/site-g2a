@@ -1,0 +1,101 @@
+---
+// The hero graphic: the G2A logo's monoline stroke, climbing in steps through the Tax Reform
+// milestones and ending in the upward arrow of the "G". The bright part of the line is drawn
+// up to today's date once on load (the page's only non-interactive motion).
+import { reforma } from '../data/site';
+
+// Path drawn in the logo's geometry: constant width, rounded turns, ends in a 45° arrow.
+const D = 'M 20 470 H 210 A 60 60 0 0 0 270 410 V 360 A 60 60 0 0 1 330 300 H 430 A 60 60 0 0 0 490 240 V 200 L 586 104';
+// Arrow head drawn like the "G": a horizontal and a vertical bar meeting in a sharp corner.
+const SETA = 'M 500 84 H 606 V 190';
+// Solid colour for the part still ahead (white at 10% over navy), so overlapping strokes don't stack.
+const FUTURO = '#323d73';
+
+// Milestones: where each one sits on the drawing and when it starts.
+const marcos = [
+  { x: 40, y: 470, data: '2026-01-01', lx: 24, ly: 430, ancora: 'start' },
+  { x: 165, y: 470, data: '2027-01-01', lx: 165, ly: 430, ancora: 'start' },
+  { x: 340, y: 300, data: '2029-01-01', lx: 340, ly: 260, ancora: 'start' },
+  { x: 586, y: 104, data: '2033-01-01', lx: 478, ly: 64, ancora: 'end', semPonto: true },
+].map((m, i) => ({ ...m, ...reforma[i] }));
+---
+
+<figure class="linha-reforma" data-linha data-marcos={JSON.stringify(marcos.map((m) => ({ x: m.x, y: m.y, data: m.data })))}>
+  <svg viewBox="0 0 640 540" class="h-auto w-full overflow-visible" role="img" aria-labelledby="linha-titulo linha-desc">
+    <title id="linha-titulo">Transição da Reforma Tributária, de 2026 a 2033</title>
+    <desc id="linha-desc">{marcos.map((m) => `${m.ano}: ${m.titulo}.`).join(' ')}</desc>
+    <defs>
+      <linearGradient id="linha-grad" x1="40" y1="470" x2="590" y2="100" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="var(--color-ciano)" />
+        <stop offset="1" stop-color="var(--color-ceu)" />
+      </linearGradient>
+    </defs>
+
+    <path d={D} fill="none" stroke={FUTURO} stroke-width="34" stroke-linejoin="round" />
+    <path d={SETA} fill="none" stroke={FUTURO} stroke-width="34" stroke-linejoin="miter" data-linha-seta />
+    <path d={D} fill="none" stroke="url(#linha-grad)" stroke-width="34" stroke-linejoin="round" class="linha-feita" data-linha-feita />
+
+    {
+      marcos.map((m) => (
+        <g>
+          {!m.semPonto && <circle cx={m.x} cy={m.y} r="7" fill="var(--color-navy)" />}
+          <text x={m.lx} y={m.ly} text-anchor={m.ancora} class="fill-ceu numero" font-size="30">{m.ano}</text>
+          <text x={m.lx} y={m.ly + 22} text-anchor={m.ancora} class="fill-white/75" font-size="15" font-weight="500">{m.titulo}</text>
+        </g>
+      ))
+    }
+
+    <g class="hoje" data-hoje hidden>
+      <circle r="13" fill="var(--color-navy)" stroke="white" stroke-width="4" />
+      <text y="44" text-anchor="middle" font-size="14" font-weight="700" class="fill-white">Hoje</text>
+    </g>
+  </svg>
+</figure>
+
+<script>
+  // Places "Hoje" on the line by date (piecewise between milestones) and draws the line up to it.
+  function iniciar(fig: HTMLElement) {
+    const caminho = fig.querySelector<SVGPathElement>('[data-linha-feita]');
+    const hoje = fig.querySelector<SVGGElement>('[data-hoje]');
+    const seta = fig.querySelector<SVGPathElement>('[data-linha-seta]');
+    if (!caminho || !hoje) return;
+
+    const marcos: { x: number; y: number; data: string }[] = JSON.parse(fig.dataset.marcos ?? '[]');
+    const total = caminho.getTotalLength();
+
+    // Length along the path closest to each milestone point.
+    const amostras = Array.from({ length: 400 }, (_, i) => {
+      const l = (total * i) / 399;
+      const p = caminho.getPointAtLength(l);
+      return { l, x: p.x, y: p.y };
+    });
+    const comprimento = (x: number, y: number) =>
+      amostras.reduce((a, b) => (Math.hypot(b.x - x, b.y - y) < Math.hypot(a.x - x, a.y - y) ? b : a)).l;
+    const pontos = marcos.map((m) => ({ l: comprimento(m.x, m.y), t: Date.parse(m.data) }));
+
+    const agora = Date.now();
+    let l = total;
+    for (let i = 0; i < pontos.length - 1; i++) {
+      const a = pontos[i];
+      const b = pontos[i + 1];
+      if (agora < a.t) { l = a.l; break; }
+      if (agora < b.t) { l = a.l + ((agora - a.t) / (b.t - a.t)) * (b.l - a.l); break; }
+    }
+
+    const p = caminho.getPointAtLength(l);
+    hoje.setAttribute('transform', `translate(${p.x} ${p.y})`);
+    hoje.removeAttribute('hidden');
+    caminho.style.strokeDasharray = `${l} ${total}`;
+    if (l >= total - 1 && seta) {
+      seta.setAttribute('stroke', 'var(--color-ceu)');
+    }
+
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      caminho.animate([{ strokeDasharray: `0 ${total}` }, { strokeDasharray: `${l} ${total}` }], {
+        duration: 1400, delay: 200, easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)', fill: 'backwards',
+      });
+      hoje.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 400, delay: 1400, fill: 'backwards' });
+    }
+  }
+  document.querySelectorAll<HTMLElement>('[data-linha]').forEach(iniciar);
+</script>
