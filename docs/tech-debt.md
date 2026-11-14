@@ -2,12 +2,14 @@
 
 Prioridade: **P1** resolver já · **P2** próximo ciclo · **P3** quando houver oportunidade.
 
-## 1. [P1] Rotacionar as chaves da AbstractAPI da antiga calculadora
+## 1. [P1] Revogar as chaves da AbstractAPI da antiga calculadora
 
 A calculadora foi removida, mas o bundle dela trazia em texto puro as API keys de validação de e-mail e telefone da AbstractAPI. Elas ficaram públicas no site e continuam no histórico do Git.
 
-- **Revogar as chaves no painel da AbstractAPI.** Limpar o histórico do Git não resolve, porque elas já foram servidas.
-- Verificar se ainda há algo usando o Google Forms de leads da calculadora e desativá-lo.
+A AbstractAPI só era usada pela calculadora, para validar o e-mail e o telefone dos leads antes de enviá-los ao Google Forms. Nada no site usa o serviço hoje, então não há o que substituir.
+
+- **Revogar as duas chaves no painel da AbstractAPI**, ou encerrar a conta. Não é preciso gerar chaves novas. Limpar o histórico do Git não resolve, porque elas já foram servidas.
+- Fechar o Google Forms que recebia os leads da calculadora para novas respostas.
 
 ## 2. ~~Calculadora sem código-fonte~~ (resolvido)
 

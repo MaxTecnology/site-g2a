@@ -62,7 +62,7 @@ Origem: análise técnica de 14/11/2026. Débitos que ficaram abertos estão em 
 
 ## Pendências que dependem do cliente ou do dono do projeto
 
-- [ ] **Revogar e rotacionar as chaves da AbstractAPI** da antiga calculadora (ver tech-debt, item 1)
+- [ ] **Revogar as chaves da AbstractAPI** e fechar o Google Forms de leads da antiga calculadora (ver tech-debt, item 1)
 - [ ] Validar com o escritório o texto das 8 perguntas do diagnóstico (`src/lib/prontidao.ts`)
 - [ ] Preencher os números reais, o horário e o CRC em `src/data/site.ts`
 - [ ] Depois do deploy, rodar de novo `npm run directus:setup` para aplicar as permissões restritas
