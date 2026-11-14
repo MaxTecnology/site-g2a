@@ -1,0 +1,13 @@
+---
+// The arrow of the "G" in the G2A logo, used as a quiet brand mark on inner page headers.
+// Pure decoration: hidden from assistive tech.
+interface Props {
+  class?: string;
+}
+const { class: classe } = Astro.props;
+---
+
+<svg viewBox="0 0 300 300" class={classe} fill="none" stroke="var(--color-navy-linha)" stroke-width="34" aria-hidden="true" focusable="false">
+  <path d="M 20 280 L 222 78" />
+  <path d="M 120 62 H 238 V 180" stroke-linejoin="miter" />
+</svg>

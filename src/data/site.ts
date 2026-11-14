@@ -19,6 +19,9 @@ export const site = {
   horario: null as string | null, // ex.: 'Segunda a sexta, das 8h às 18h'
   // TODO: preencher com o registro do escritório no CRC-AL. null = não exibe.
   crc: null as string | null,
+  // Optional photo of the office (facade, reception). Put the file in public/img/ and set the path,
+  // e.g. '/img/escritorio.jpg' (landscape, at least 1600px wide). null = the Sobre page shows no photo.
+  fotoEscritorio: null as { src: string; alt: string } | null,
 };
 
 export const whatsappLink = (mensagem = 'Olá! Vim pelo site da G2A e gostaria de falar com um contador.') =>

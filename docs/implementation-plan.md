@@ -45,6 +45,15 @@ Origem: análise técnica de 14/11/2026. Débitos que ficaram abertos estão em 
 - [x] Novo diagnóstico de prontidão em `/reforma-tributaria#diagnostico`: 8 perguntas, nível de preparo, pendências em ordem de prioridade e envio opcional do resultado pelo WhatsApp. Sem dados pessoais e sem serviços externos
 - [x] CSP sem nenhuma origem de terceiros para scripts, estilos, fontes, conexões e formulários
 
+## Fase 3d: identidade visual
+
+- [x] Home: hero com a "linha da G2A" (o traço do logo passando pelos marcos da reforma até hoje, terminando na seta do G)
+- [x] Home: seção "Ferramentas gratuitas" (diagnóstico da reforma e controle de jornada) no lugar de números provisórios
+- [x] Números "00" escondidos em produção (home e Sobre) até serem preenchidos em `src/data/site.ts`
+- [x] Cabeçalho das páginas internas com a seta do G como marca discreta (só desktop, sem sobrepor conteúdo)
+- [x] Sobre pronta para foto do escritório: basta preencher `site.fotoEscritorio`
+- [x] Links de serviço com a seta do logo; token `--color-navy-linha` para a linha apagada
+
 ## Fase 4: SEO e limpeza
 
 - [x] `/sitemap-avisos.xml` dinâmico com a home, `/avisos` e os avisos publicados, referenciado no `sitemap-index.xml`
