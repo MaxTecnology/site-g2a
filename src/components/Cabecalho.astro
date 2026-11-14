@@ -1,0 +1,25 @@
+---
+interface Props {
+  titulo: string;
+  intro?: string;
+  trilha?: { href: string; label: string };
+}
+const { titulo, intro, trilha } = Astro.props;
+---
+
+<section class="bg-navy text-white">
+  <div class="container-g2a py-14 md:py-20">
+    {
+      trilha && (
+        <p class="mb-5 text-sm">
+          <a href={trilha.href} class="text-ceu underline decoration-ceu/40 underline-offset-4 hover:decoration-ceu">
+            {trilha.label}
+          </a>
+        </p>
+      )
+    }
+    <h1 class="titulo max-w-4xl text-4xl sm:text-5xl md:text-6xl">{titulo}</h1>
+    {intro && <p class="mt-6 max-w-2xl text-lg text-white/80">{intro}</p>}
+    <slot />
+  </div>
+</section>

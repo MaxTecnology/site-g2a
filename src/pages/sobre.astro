@@ -1,0 +1,78 @@
+---
+import Base from '../layouts/Base.astro';
+import Cabecalho from '../components/Cabecalho.astro';
+import { site, numeros, whatsappLink } from '../data/site';
+
+const principios = [
+  {
+    titulo: 'Um contador responsável por empresa',
+    texto: 'Você sabe com quem falar. Quem cuida da sua contabilidade conhece o histórico, os sócios e as particularidades do negócio.',
+  },
+  {
+    titulo: 'Prazos antes do vencimento',
+    texto: 'Guias, declarações e documentos saem com antecedência, e os avisos importantes ficam publicados aqui no site.',
+  },
+  {
+    titulo: 'Tecnologia a favor da rotina',
+    texto: 'Automatizamos a captura de notas fiscais, a consulta de pendências na Sefaz e a conferência de cadastros, para sobrar tempo para a análise.',
+  },
+  {
+    titulo: 'Linguagem que o empresário entende',
+    texto: 'Explicamos números e obrigações sem jargão, com o que muda no caixa da empresa.',
+  },
+];
+---
+
+<Base titulo="Sobre a G2A" descricao="Conheça a G2A Soluções Contábeis, escritório de contabilidade em Arapiraca que atende empresas do agreste e sertão de Alagoas.">
+  <Cabecalho
+    titulo="Contabilidade feita perto do cliente, com o rigor que a legislação exige"
+    intro="A G2A é um escritório de contabilidade de Arapiraca. Atendemos comércios, indústrias e prestadores de serviço de todo o agreste e sertão de Alagoas."
+  />
+
+  <section class="container-g2a grid gap-14 py-16 md:py-24 lg:grid-cols-[1fr_1.4fr] lg:gap-20">
+    <h2 class="titulo text-4xl text-navy md:text-5xl">Como trabalhamos</h2>
+    <dl class="grid gap-x-10 gap-y-10 sm:grid-cols-2">
+      {
+        principios.map((p) => (
+          <div class="border-t-2 border-ciano pt-5">
+            <dt class="text-lg font-semibold text-navy">{p.titulo}</dt>
+            <dd class="mt-2 text-cinza">{p.texto}</dd>
+          </div>
+        ))
+      }
+    </dl>
+  </section>
+
+  <section class="bg-pedra">
+    <div class="container-g2a grid grid-cols-2 gap-x-6 gap-y-10 py-16 lg:grid-cols-4">
+      {
+        numeros.map((n) => (
+          <div>
+            <p class="numero text-6xl text-navy">{n.valor}</p>
+            <p class="mt-3 max-w-[18ch] text-cinza">{n.rotulo}</p>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="container-g2a py-16 md:py-24">
+    <div class="grid gap-10 lg:grid-cols-[1.4fr_1fr] lg:items-end">
+      <div>
+        <h2 class="titulo text-4xl text-navy md:text-5xl">Dados do escritório</h2>
+        <dl class="mt-8 grid gap-6 sm:grid-cols-2">
+          <div><dt class="text-sm text-cinza">Razão social</dt><dd class="mt-1 font-medium">{site.nome}</dd></div>
+          <div><dt class="text-sm text-cinza">CNPJ</dt><dd class="mt-1 font-medium tabular-nums">{site.cnpj}</dd></div>
+          {site.crc && <div><dt class="text-sm text-cinza">Registro no CRC</dt><dd class="mt-1 font-medium">{site.crc}</dd></div>}
+          <div>
+            <dt class="text-sm text-cinza">Endereço</dt>
+            <dd class="mt-1 font-medium">{site.endereco.rua}, {site.endereco.bairro}<br />{site.endereco.cidade} - {site.endereco.uf}</dd>
+          </div>
+        </dl>
+      </div>
+      <a href={whatsappLink()} target="_blank" rel="noopener" class="rounded-md bg-navy px-6 py-4 text-center font-semibold text-white hover:bg-navy-deep">
+        Falar com a equipe
+      </a>
+    </div>
+  </section>
+</Base>

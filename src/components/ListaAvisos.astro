@@ -1,0 +1,36 @@
+---
+import { type Aviso, dataLonga, ehPdf } from '../lib/directus';
+
+interface Props {
+  avisos: Aviso[];
+}
+const { avisos } = Astro.props;
+---
+
+<ul class="divide-y divide-pedra border-y border-pedra">
+  {
+    avisos.map((a) => {
+      const pdfs = a.anexos.filter((x) => x.directus_files_id && ehPdf(x.directus_files_id)).length;
+      return (
+        <li>
+          <a href={`/avisos/${a.slug}`} class="group grid gap-x-8 gap-y-1 py-6 md:grid-cols-[11rem_1fr_auto] md:items-baseline">
+            <p class="text-sm text-cinza">
+              <time datetime={a.publicado_em}>{dataLonga(a.publicado_em)}</time>
+              {a.categoria && <span class="block font-medium text-ciano-escuro">{a.categoria}</span>}
+            </p>
+            <div>
+              <h3 class="titulo-medio text-xl text-navy group-hover:underline group-hover:decoration-ciano group-hover:underline-offset-4">{a.titulo}</h3>
+              {a.resumo && <p class="mt-1.5 max-w-[65ch] text-cinza">{a.resumo}</p>}
+            </div>
+            {pdfs > 0 && (
+              <p class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-navy md:mt-0">
+                <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" /></svg>
+                {pdfs === 1 ? 'PDF anexo' : `${pdfs} PDFs anexos`}
+              </p>
+            )}
+          </a>
+        </li>
+      );
+    })
+  }
+</ul>

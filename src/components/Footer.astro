@@ -1,0 +1,45 @@
+---
+import { site, servicos, whatsappLink } from '../data/site';
+const ano = new Date().getFullYear();
+---
+
+<footer class="bg-navy-deep text-white/75">
+  <div class="container-g2a grid gap-12 py-16 md:grid-cols-[1.4fr_1fr_1fr]">
+    <div>
+      <img src="/img/logo-branco.png" alt="G2A Soluções Contábeis" width="1080" height="494" class="h-14 w-auto" />
+      <p class="mt-6 max-w-sm">
+        Escritório de contabilidade em Arapiraca, atendendo empresas de todo o agreste e sertão de Alagoas.
+      </p>
+    </div>
+
+    <div>
+      <h2 class="font-semibold text-white">Serviços</h2>
+      <ul class="mt-4 space-y-2.5">
+        {servicos.map((s) => <li><a class="hover:text-white" href={`/servicos/${s.slug}`}>{s.nome}</a></li>)}
+        <li><a class="hover:text-white" href="/reforma-tributaria">Reforma Tributária</a></li>
+        <li><a class="hover:text-white" href="/calculadora.html">Simulador da reforma</a></li>
+        <li><a class="hover:text-white" href="/controle-de-jornada">Controle de jornada (fim da 6x1)</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <h2 class="font-semibold text-white">Atendimento</h2>
+      <address class="mt-4 space-y-2.5 not-italic">
+        <p>
+          <a class="hover:text-white" href={site.mapsUrl} target="_blank" rel="noopener">
+            {site.endereco.rua}<br />{site.endereco.bairro}, {site.endereco.cidade} - {site.endereco.uf}
+          </a>
+        </p>
+        <p><a class="hover:text-white" href={whatsappLink()} target="_blank" rel="noopener">WhatsApp {site.telefoneExibicao}</a></p>
+        <p><a class="break-all hover:text-white" href={`mailto:${site.email}`}>{site.email}</a></p>
+        {site.horario && <p>{site.horario}</p>}
+      </address>
+    </div>
+  </div>
+  <div class="border-t border-white/10">
+    <div class="container-g2a flex flex-col gap-2 py-6 text-sm text-white/55 sm:flex-row sm:justify-between">
+      <p>© {ano} {site.nome}. CNPJ {site.cnpj}{site.crc && `. ${site.crc}`}</p>
+      <p><a class="hover:text-white" href="/avisos">Avisos aos clientes</a></p>
+    </div>
+  </div>
+</footer>

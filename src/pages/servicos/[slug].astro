@@ -1,0 +1,53 @@
+---
+import Base from '../../layouts/Base.astro';
+import Cabecalho from '../../components/Cabecalho.astro';
+import { servicos, whatsappLink, type Servico } from '../../data/site';
+
+export function getStaticPaths() {
+  return servicos.map((s) => ({ params: { slug: s.slug }, props: { servico: s } }));
+}
+
+const { servico } = Astro.props as { servico: Servico };
+const outros = servicos.filter((s) => s.slug !== servico.slug);
+---
+
+<Base titulo={servico.nome} descricao={servico.resumo}>
+  <Cabecalho titulo={servico.nome} intro={servico.resumo} trilha={{ href: '/servicos', label: 'Todos os serviços' }} />
+
+  <div class="container-g2a grid gap-14 py-16 md:py-24 lg:grid-cols-[1.6fr_1fr] lg:gap-20">
+    <div>
+      <h2 class="titulo-medio text-2xl text-navy">Para quem é</h2>
+      <p class="mt-3 max-w-[60ch] text-lg">{servico.paraQuem}</p>
+
+      <h2 class="titulo-medio mt-12 text-2xl text-navy">O que está incluído</h2>
+      <ul class="mt-5 divide-y divide-pedra border-y border-pedra">
+        {
+          servico.inclui.map((i) => (
+            <li class="flex gap-4 py-4">
+              <svg class="mt-1 size-5 shrink-0 text-ciano" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+              {i}
+            </li>
+          ))
+        }
+      </ul>
+      <p class="mt-6 text-sm text-cinza">O escopo final depende do porte e do regime da empresa e vai descrito na proposta.</p>
+    </div>
+
+    <aside class="self-start rounded-lg bg-navy p-8 text-white lg:sticky lg:top-28">
+      <h2 class="titulo-medio text-2xl">Quer uma proposta?</h2>
+      <p class="mt-3 text-white/75">Conte rapidamente sobre a sua empresa. Respondemos em horário comercial.</p>
+      <a href={whatsappLink(servico.mensagemWhatsapp)} target="_blank" rel="noopener" class="mt-6 block rounded-md bg-ciano px-5 py-3.5 text-center font-semibold text-navy-deep hover:bg-ceu">
+        Pedir proposta no WhatsApp
+      </a>
+    </aside>
+  </div>
+
+  <section class="border-t border-pedra">
+    <div class="container-g2a py-14">
+      <h2 class="font-semibold text-navy">Outros serviços</h2>
+      <ul class="mt-4 flex flex-wrap gap-x-8 gap-y-3">
+        {outros.map((s) => <li><a href={`/servicos/${s.slug}`} class="text-ciano-escuro underline decoration-ciano/30 underline-offset-4 hover:decoration-ciano">{s.nome}</a></li>)}
+      </ul>
+    </div>
+  </section>
+</Base>

@@ -1,0 +1,110 @@
+---
+import Base from '../../layouts/Base.astro';
+import Cabecalho from '../../components/Cabecalho.astro';
+import { buscarAviso, urlArquivo, ehPdf, ehImagem, tamanhoLegivel, dataLonga } from '../../lib/directus';
+import { whatsappLink } from '../../data/site';
+
+export const prerender = false;
+
+const aviso = await buscarAviso(Astro.params.slug ?? '');
+if (!aviso) Astro.response.status = 404;
+Astro.response.headers.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=600');
+
+const arquivos = (aviso?.anexos ?? []).map((a) => a.directus_files_id).filter(Boolean);
+const pdfs = arquivos.filter(ehPdf);
+const imagens = arquivos.filter(ehImagem);
+const outros = arquivos.filter((a) => !ehPdf(a) && !ehImagem(a));
+const capa = aviso?.capa && ehImagem(aviso.capa) ? aviso.capa : imagens[0];
+const imagemOg = capa ? urlArquivo(capa, { largura: 1200 }) : undefined;
+---
+
+{!aviso && (
+  <Base titulo="Aviso não encontrado" descricao="Este aviso não existe ou foi retirado do ar.">
+    <section class="container-g2a py-24 md:py-32">
+      <h1 class="titulo max-w-2xl text-4xl text-navy md:text-5xl">Este aviso não existe ou foi retirado do ar</h1>
+      <p class="mt-6"><a href="/avisos" class="font-semibold text-ciano-escuro underline underline-offset-4">Ver os avisos publicados</a></p>
+    </section>
+  </Base>
+)}
+{aviso && (
+<Base titulo={aviso.titulo} descricao={aviso.resumo ?? aviso.titulo} imagem={imagemOg} tipo="article">
+  <Cabecalho titulo={aviso.titulo} trilha={{ href: '/avisos', label: 'Todos os avisos' }}>
+    <p class="mt-6 text-white/75">
+      <time datetime={aviso.publicado_em}>Publicado em {dataLonga(aviso.publicado_em)}</time>
+      {aviso.categoria && <span class="ml-3 rounded-sm bg-white/10 px-2 py-0.5 text-sm text-ceu">{aviso.categoria}</span>}
+    </p>
+  </Cabecalho>
+
+  <article class="container-g2a py-14 md:py-20">
+    <div class="grid gap-14 lg:grid-cols-[1fr_20rem] lg:gap-20">
+      <div>
+        {aviso.resumo && <p class="max-w-[62ch] text-xl leading-relaxed text-navy">{aviso.resumo}</p>}
+
+        {
+          capa && (
+            <img
+              src={urlArquivo(capa, { largura: 1400 })}
+              alt={capa.title ?? ''}
+              width={capa.width ?? undefined}
+              height={capa.height ?? undefined}
+              class="mt-10 w-full rounded-lg border border-pedra"
+            />
+          )
+        }
+
+        {aviso.conteudo && <div class="prosa mt-10" set:html={aviso.conteudo} />}
+
+        {
+          imagens.filter((i) => i.id !== capa?.id).length > 0 && (
+            <div class="mt-12 grid gap-4 sm:grid-cols-2">
+              {imagens
+                .filter((i) => i.id !== capa?.id)
+                .map((i) => (
+                  <a href={urlArquivo(i)} target="_blank" rel="noopener" class="block">
+                    <img src={urlArquivo(i, { largura: 900 })} alt={i.title ?? ''} loading="lazy" class="w-full rounded-lg border border-pedra" />
+                  </a>
+                ))}
+            </div>
+          )
+        }
+      </div>
+
+      <aside class="space-y-8 self-start lg:sticky lg:top-28">
+        {
+          (pdfs.length > 0 || outros.length > 0) && (
+            <div>
+              <h2 class="font-semibold text-navy">Arquivos</h2>
+              <ul class="mt-4 space-y-3">
+                {[...pdfs, ...outros].map((a) => (
+                  <li class="rounded-lg bg-pedra p-4">
+                    <p class="font-medium break-words">{a.title ?? a.filename_download}</p>
+                    <p class="text-sm text-cinza">
+                      {ehPdf(a) ? 'PDF' : a.type}
+                      {a.filesize ? `, ${tamanhoLegivel(a.filesize)}` : ''}
+                    </p>
+                    <div class="mt-3 flex gap-4 text-sm font-semibold">
+                      <a href={urlArquivo(a)} target="_blank" rel="noopener" class="text-ciano-escuro underline underline-offset-4">Abrir</a>
+                      <a href={urlArquivo(a, { download: true })} class="text-navy underline underline-offset-4">Baixar</a>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )
+        }
+        <div class="rounded-lg bg-navy p-6 text-white">
+          <p class="font-semibold">Ficou com dúvida sobre este aviso?</p>
+          <a
+            href={whatsappLink(`Olá! Tenho uma dúvida sobre o aviso "${aviso.titulo}".`)}
+            target="_blank"
+            rel="noopener"
+            class="mt-4 block rounded-md bg-ciano px-4 py-3 text-center font-semibold text-navy-deep hover:bg-ceu"
+          >
+            Perguntar no WhatsApp
+          </a>
+        </div>
+      </aside>
+    </div>
+  </article>
+</Base>
+)}

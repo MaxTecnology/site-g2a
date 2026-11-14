@@ -1,0 +1,51 @@
+---
+import Base from '../../layouts/Base.astro';
+import Cabecalho from '../../components/Cabecalho.astro';
+import ListaAvisos from '../../components/ListaAvisos.astro';
+import { listarAvisos, CATEGORIAS } from '../../lib/directus';
+
+export const prerender = false;
+
+const pedida = Astro.url.searchParams.get('categoria') ?? '';
+const categoria = (CATEGORIAS as readonly string[]).includes(pedida) ? pedida : undefined;
+const { avisos, ok } = await listarAvisos({ categoria });
+Astro.response.headers.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=600');
+if (!ok) Astro.response.status = 503;
+
+const filtros = [{ label: 'Todos', valor: undefined as string | undefined }, ...CATEGORIAS.map((c) => ({ label: c, valor: c }))];
+---
+
+<Base titulo="Avisos aos clientes" descricao="Prazos, mudanças na legislação e comunicados da G2A Soluções Contábeis para clientes e empresários de Alagoas.">
+  <Cabecalho titulo="Avisos aos clientes" intro="Prazos, mudanças na legislação e comunicados do escritório. Os materiais em PDF podem ser abertos ou baixados em cada aviso." />
+
+  <div class="container-g2a py-14 md:py-20">
+    <nav aria-label="Filtrar por categoria" class="-mx-1 flex flex-wrap gap-2">
+      {
+        filtros.map((f) => (
+          <a
+            href={f.valor ? `/avisos?categoria=${encodeURIComponent(f.valor)}` : '/avisos'}
+            aria-current={f.valor === categoria ? 'page' : undefined}
+            class="rounded-full px-4 py-2 text-sm font-medium text-navy ring-1 ring-pedra hover:bg-pedra aria-[current=page]:bg-navy aria-[current=page]:text-white aria-[current=page]:ring-navy"
+          >
+            {f.label}
+          </a>
+        ))
+      }
+    </nav>
+
+    <div class="mt-10">
+      {!ok && (
+        <p class="rounded-lg bg-pedra p-6">
+          Não conseguimos carregar os avisos agora. Tente de novo em alguns minutos ou fale com a gente pelo WhatsApp.
+        </p>
+      )}
+      {ok && avisos.length === 0 && (
+        <p class="rounded-lg bg-pedra p-6">
+          {categoria ? `Nenhum aviso em ${categoria} por enquanto.` : 'Nenhum aviso publicado por enquanto.'}{' '}
+          {categoria && <a href="/avisos" class="font-semibold text-ciano-escuro underline underline-offset-4">Ver todos os avisos</a>}
+        </p>
+      )}
+      {avisos.length > 0 && <ListaAvisos avisos={avisos} />}
+    </div>
+  </div>
+</Base>

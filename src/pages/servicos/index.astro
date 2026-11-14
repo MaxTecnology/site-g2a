@@ -1,0 +1,41 @@
+---
+import Base from '../../layouts/Base.astro';
+import Cabecalho from '../../components/Cabecalho.astro';
+import { servicos, whatsappLink } from '../../data/site';
+---
+
+<Base titulo="Serviços" descricao="Contabilidade e fiscal, departamento pessoal, abertura e legalização de empresas e planejamento tributário em Arapiraca - AL.">
+  <Cabecalho
+    titulo="Serviços contábeis para empresas de Alagoas"
+    intro="Do registro da empresa ao balanço anual, com um contador responsável acompanhando cada etapa."
+  />
+
+  <div class="container-g2a py-16 md:py-24">
+    <ul class="grid gap-x-16 gap-y-16 md:grid-cols-2">
+      {
+        servicos.map((s) => (
+          <li class="border-t-2 border-navy pt-6">
+            <h2 class="titulo-medio text-3xl text-navy">{s.nome}</h2>
+            <p class="mt-3 text-cinza">{s.resumo}</p>
+            <ul class="mt-5 space-y-2">
+              {s.inclui.slice(0, 3).map((i) => (
+                <li class="flex gap-3">
+                  <span class="mt-2.5 h-0.5 w-3 shrink-0 bg-ciano" aria-hidden="true" />
+                  {i}
+                </li>
+              ))}
+            </ul>
+            <div class="mt-6 flex flex-wrap gap-x-6 gap-y-2">
+              <a href={`/servicos/${s.slug}`} class="font-semibold text-ciano-escuro underline decoration-ciano/30 underline-offset-4 hover:decoration-ciano">
+                Detalhes do serviço
+              </a>
+              <a href={whatsappLink(s.mensagemWhatsapp)} target="_blank" rel="noopener" class="font-semibold text-navy underline decoration-navy/20 underline-offset-4 hover:decoration-navy">
+                Pedir proposta
+              </a>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</Base>

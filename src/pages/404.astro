@@ -1,0 +1,17 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base titulo="Página não encontrada" descricao="A página procurada não existe ou mudou de endereço.">
+  <section class="container-g2a py-24 md:py-32">
+    <p class="numero text-8xl text-ceu">404</p>
+    <h1 class="titulo mt-6 max-w-2xl text-4xl text-navy md:text-5xl">Esta página não existe ou mudou de endereço</h1>
+    <p class="mt-5 max-w-xl text-cinza">O site da G2A foi reformulado. O conteúdo que você procura provavelmente está em uma destas páginas:</p>
+    <ul class="mt-8 flex flex-wrap gap-x-8 gap-y-3 font-semibold">
+      <li><a class="text-ciano-escuro underline underline-offset-4" href="/">Início</a></li>
+      <li><a class="text-ciano-escuro underline underline-offset-4" href="/servicos">Serviços</a></li>
+      <li><a class="text-ciano-escuro underline underline-offset-4" href="/avisos">Avisos</a></li>
+      <li><a class="text-ciano-escuro underline underline-offset-4" href="/contato">Contato</a></li>
+    </ul>
+  </section>
+</Base>

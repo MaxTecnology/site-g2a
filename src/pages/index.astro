@@ -1,0 +1,146 @@
+---
+import Base from '../layouts/Base.astro';
+import ReguaReforma from '../components/ReguaReforma.astro';
+import ListaAvisos from '../components/ListaAvisos.astro';
+import { site, servicos, numeros, whatsappLink } from '../data/site';
+import { listarAvisos } from '../lib/directus';
+
+// Renderizada sob demanda para mostrar os avisos mais recentes e a régua no dia certo.
+export const prerender = false;
+
+const { avisos } = await listarAvisos({ limite: 3 });
+Astro.response.headers.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=600');
+
+const etapas = [
+  { titulo: 'Conversa inicial', texto: 'Entendemos o momento da empresa, o faturamento e o que hoje dá dor de cabeça.' },
+  { titulo: 'Diagnóstico', texto: 'Conferimos regime tributário, certidões e pendências antes de assumir qualquer obrigação.' },
+  { titulo: 'Proposta', texto: 'Você recebe por escrito o que fazemos, os prazos e o honorário mensal.' },
+  { titulo: 'Transição', texto: 'Pedimos os arquivos ao contador anterior e assumimos sem deixar nenhuma competência para trás.' },
+];
+const dev = import.meta.env.DEV;
+---
+
+<Base
+  titulo={site.nome}
+  descricao="Escritório de contabilidade em Arapiraca - AL. Contabilidade, fiscal, departamento pessoal, abertura de empresas e planejamento para a Reforma Tributária."
+>
+  <section class="bg-navy text-white">
+    <div class="container-g2a pt-16 pb-14 md:pt-24 md:pb-20">
+      <div class="max-w-4xl">
+        <h1 class="titulo text-[2.75rem] sm:text-6xl lg:text-[5.25rem]">
+          Sua empresa em dia hoje e pronta para a Reforma Tributária.
+        </h1>
+        <p class="mt-7 max-w-2xl text-lg text-white/80 md:text-xl">
+          Somos um escritório de contabilidade em Arapiraca. Cuidamos dos impostos, da folha e da legalização de empresas
+          do Simples Nacional ao Lucro Real, em todo o agreste e sertão de Alagoas.
+        </p>
+        <div class="mt-9 flex flex-wrap gap-3">
+          <a href={whatsappLink()} target="_blank" rel="noopener" class="rounded-md bg-ciano px-6 py-3.5 font-semibold text-navy-deep transition-colors hover:bg-ceu">
+            Falar com um contador
+          </a>
+          <a href="/servicos" class="rounded-md px-6 py-3.5 font-semibold text-white ring-1 ring-white/30 transition-colors hover:bg-white/10">
+            Conhecer os serviços
+          </a>
+        </div>
+      </div>
+
+      <div class="mt-16 md:mt-24">
+        <ReguaReforma />
+        <p class="mt-8">
+          <a href="/reforma-tributaria" class="font-semibold text-ceu underline decoration-ceu/40 underline-offset-4 hover:decoration-ceu">
+            O que muda para a sua empresa em cada etapa
+          </a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="container-g2a grid gap-10 py-20 md:py-28 lg:grid-cols-[1fr_1.6fr] lg:gap-20">
+    <div class="lg:sticky lg:top-28 lg:self-start">
+      <h2 class="titulo text-4xl text-navy md:text-5xl">O que fazemos pela sua empresa</h2>
+      <p class="mt-5 max-w-md text-cinza">
+        Um só escritório para a contabilidade, os impostos, os funcionários e a papelada da empresa. Cada cliente tem um
+        contador responsável que conhece o seu negócio pelo nome.
+      </p>
+    </div>
+    <ul class="divide-y divide-pedra border-y border-pedra">
+      {
+        servicos.map((s) => (
+          <li class="py-8">
+            <h3 class="titulo-medio text-2xl text-navy md:text-[1.75rem]">{s.nome}</h3>
+            <p class="mt-2.5 max-w-[60ch] text-cinza">{s.resumo}</p>
+            <a href={`/servicos/${s.slug}`} class="mt-4 inline-block font-semibold text-ciano-escuro underline decoration-ciano/30 underline-offset-4 hover:decoration-ciano">
+              Ver o que está incluído
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section class="bg-pedra">
+    <div class="container-g2a grid grid-cols-2 gap-x-6 gap-y-10 py-16 lg:grid-cols-4">
+      {
+        numeros.map((n) => (
+          <div class:list={[dev && n.placeholder && 'rounded outline-2 outline-offset-4 outline-amber-500 outline-dashed']}>
+            <p class="numero text-6xl text-navy md:text-7xl">{n.valor}</p>
+            <p class="mt-3 max-w-[18ch] text-cinza">{n.rotulo}</p>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  {
+    avisos.length > 0 && (
+      <section class="container-g2a py-20 md:py-28">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h2 class="titulo text-4xl text-navy md:text-5xl">Avisos aos clientes</h2>
+            <p class="mt-3 text-cinza">Prazos, mudanças na legislação e comunicados do escritório.</p>
+          </div>
+          <a href="/avisos" class="font-semibold text-ciano-escuro underline decoration-ciano/30 underline-offset-4 hover:decoration-ciano">
+            Todos os avisos
+          </a>
+        </div>
+        <div class="mt-10">
+          <ListaAvisos avisos={avisos} />
+        </div>
+      </section>
+    )
+  }
+
+  <section class:list={[avisos.length > 0 && 'border-t border-pedra']}>
+    <div class="container-g2a py-20 md:py-28">
+      <h2 class="titulo max-w-3xl text-4xl text-navy md:text-5xl">Trocar de contador leva menos tempo do que parece</h2>
+      <ol class="mt-12 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+        {
+          etapas.map((e, i) => (
+            <li>
+              <p class="numero text-5xl text-ciano" aria-hidden="true">{i + 1}</p>
+              <h3 class="mt-4 text-lg font-semibold text-navy">{e.titulo}</h3>
+              <p class="mt-1.5 text-cinza">{e.texto}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </section>
+
+  <section class="container-g2a grid gap-10 py-20 md:py-24 lg:grid-cols-[1.5fr_1fr] lg:items-end">
+    <div>
+      <h2 class="titulo text-4xl text-navy md:text-6xl">Vamos conversar sobre a sua empresa?</h2>
+      <p class="mt-5 max-w-xl text-lg text-cinza">
+        Atendemos pelo WhatsApp, por e-mail e no escritório, no bairro Novo Horizonte, em Arapiraca.
+      </p>
+    </div>
+    <div class="flex flex-col gap-3">
+      <a href={whatsappLink()} target="_blank" rel="noopener" class="rounded-md bg-navy px-6 py-4 text-center font-semibold text-white transition-colors hover:bg-navy-deep">
+        Chamar no WhatsApp {site.telefoneExibicao}
+      </a>
+      <a href="/contato" class="rounded-md px-6 py-4 text-center font-semibold text-navy ring-1 ring-navy/20 transition-colors hover:bg-pedra">
+        Ver endereço e outros contatos
+      </a>
+    </div>
+  </section>
+</Base>

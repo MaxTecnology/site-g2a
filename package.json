@@ -1,0 +1,21 @@
+{
+  "name": "site-g2a",
+  "type": "module",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "start": "node ./dist/server/entry.mjs",
+    "directus:setup": "node scripts/directus-setup.mjs"
+  },
+  "dependencies": {
+    "@astrojs/node": "^11.1.13",
+    "@astrojs/sitemap": "^3.7.5",
+    "@fontsource-variable/archivo": "^5.3.0",
+    "@tailwindcss/vite": "^4.3.5",
+    "astro": "^7.4.12",
+    "tailwindcss": "^4.3.5"
+  }
+}

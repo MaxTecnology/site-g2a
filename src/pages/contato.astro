@@ -1,0 +1,87 @@
+---
+import Base from '../layouts/Base.astro';
+import Cabecalho from '../components/Cabecalho.astro';
+import { site, servicos, whatsappLink } from '../data/site';
+
+const mapa = `https://www.google.com/maps?q=${encodeURIComponent(`${site.endereco.rua}, ${site.endereco.bairro}, ${site.endereco.cidade} - ${site.endereco.uf}`)}&output=embed`;
+const campo = 'mt-1.5 block w-full rounded-md border border-cinza/30 bg-white px-3.5 py-3 text-tinta focus:border-ciano focus:outline-none focus:ring-2 focus:ring-ciano/30';
+---
+
+<Base titulo="Contato" descricao="Fale com a G2A Soluções Contábeis pelo WhatsApp, e-mail ou no escritório em Arapiraca - AL.">
+  <Cabecalho titulo="Fale com a G2A" intro="O jeito mais rápido é o WhatsApp. Se preferir, preencha o formulário: ele abre a conversa já com a sua mensagem." />
+
+  <div class="container-g2a grid gap-16 py-16 md:py-24 lg:grid-cols-[1.2fr_1fr] lg:gap-20">
+    <form id="form-contato" class="space-y-5" novalidate>
+      <h2 class="titulo-medio text-2xl text-navy">Enviar mensagem pelo WhatsApp</h2>
+      <div class="grid gap-5 sm:grid-cols-2">
+        <label class="block font-medium">Seu nome
+          <input name="nome" required autocomplete="name" class={campo} />
+        </label>
+        <label class="block font-medium">Empresa <span class="font-normal text-cinza">(opcional)</span>
+          <input name="empresa" autocomplete="organization" class={campo} />
+        </label>
+      </div>
+      <label class="block font-medium">Assunto
+        <select name="assunto" class={campo}>
+          {servicos.map((s) => <option>{s.nome}</option>)}
+          <option>Reforma Tributária</option>
+          <option>Já sou cliente</option>
+          <option>Outro assunto</option>
+        </select>
+      </label>
+      <label class="block font-medium">Mensagem
+        <textarea name="mensagem" rows="5" required class={campo}></textarea>
+      </label>
+      <p id="form-erro" class="hidden font-medium text-red-700" role="alert">Preencha seu nome e a mensagem para continuar.</p>
+      <button type="submit" class="rounded-md bg-navy px-6 py-3.5 font-semibold text-white hover:bg-navy-deep">Abrir conversa no WhatsApp</button>
+    </form>
+
+    <div>
+      <h2 class="titulo-medio text-2xl text-navy">Outros canais</h2>
+      <dl class="mt-6 space-y-6">
+        <div>
+          <dt class="text-sm text-cinza">WhatsApp e telefone</dt>
+          <dd class="mt-1 text-lg font-medium"><a class="hover:text-ciano-escuro" href={whatsappLink()} target="_blank" rel="noopener">{site.telefoneExibicao}</a></dd>
+        </div>
+        <div>
+          <dt class="text-sm text-cinza">E-mail</dt>
+          <dd class="mt-1 text-lg font-medium break-all"><a class="hover:text-ciano-escuro" href={`mailto:${site.email}`}>{site.email}</a></dd>
+        </div>
+        <div>
+          <dt class="text-sm text-cinza">Escritório</dt>
+          <dd class="mt-1 text-lg font-medium">
+            <a class="hover:text-ciano-escuro" href={site.mapsUrl} target="_blank" rel="noopener">
+              {site.endereco.rua}<br />{site.endereco.bairro}, {site.endereco.cidade} - {site.endereco.uf}
+            </a>
+          </dd>
+        </div>
+        {site.horario && <div><dt class="text-sm text-cinza">Horário</dt><dd class="mt-1 text-lg font-medium">{site.horario}</dd></div>}
+      </dl>
+      <iframe
+        src={mapa}
+        title="Mapa do escritório da G2A em Arapiraca"
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+        class="mt-8 aspect-[4/3] w-full rounded-lg border border-pedra"></iframe>
+    </div>
+  </div>
+</Base>
+
+<script define:vars={{ numero: site.whatsapp }}>
+  const form = document.getElementById('form-contato');
+  const erro = document.getElementById('form-erro');
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const d = new FormData(form);
+    const nome = String(d.get('nome') || '').trim();
+    const msg = String(d.get('mensagem') || '').trim();
+    if (!nome || !msg) {
+      erro.classList.remove('hidden');
+      return;
+    }
+    erro.classList.add('hidden');
+    const empresa = String(d.get('empresa') || '').trim();
+    const texto = `Olá! Sou ${nome}${empresa ? `, da ${empresa}` : ''}.\nAssunto: ${d.get('assunto')}\n\n${msg}`;
+    window.open(`https://wa.me/${numero}?text=${encodeURIComponent(texto)}`, '_blank', 'noopener');
+  });
+</script>
