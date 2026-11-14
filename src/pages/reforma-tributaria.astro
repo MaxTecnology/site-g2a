@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import Cabecalho from '../components/Cabecalho.astro';
 import ReguaReforma from '../components/ReguaReforma.astro';
+import DiagnosticoReforma from '../components/DiagnosticoReforma.astro';
 import { whatsappLink } from '../data/site';
 
 const impactos = [
@@ -96,9 +97,9 @@ const acoes = [
     </div>
 
     <aside class="space-y-4 self-start print:hidden lg:sticky lg:top-28">
-      <a href="/calculadora.html" class="block rounded-lg bg-pedra p-6 hover:bg-ceu/30">
-        <span class="titulo-medio block text-xl text-navy">Simulador da reforma</span>
-        <span class="mt-1 block text-sm text-cinza">Estime a carga de CBS e IBS sobre as suas operações.</span>
+      <a href="#diagnostico" class="block rounded-lg bg-pedra p-6 hover:bg-ceu/30">
+        <span class="titulo-medio block text-xl text-navy">Diagnóstico em 2 minutos</span>
+        <span class="mt-1 block text-sm text-cinza">Veja o que a sua empresa ainda precisa ajustar para a reforma.</span>
       </a>
       <a href={whatsappLink('Olá! Quero um diagnóstico da minha empresa para a Reforma Tributária.')} target="_blank" rel="noopener" class="block rounded-lg bg-navy p-6 text-white hover:bg-navy-deep">
         <span class="titulo-medio block text-xl">Pedir diagnóstico</span>
@@ -109,4 +110,6 @@ const acoes = [
       </button>
     </aside>
   </article>
+
+  <div class="print:hidden"><DiagnosticoReforma /></div>
 </Base>
