@@ -1,0 +1,64 @@
+---
+import { reforma } from '../data/site';
+
+interface Props {
+  tema?: 'escuro' | 'claro';
+}
+const { tema = 'escuro' } = Astro.props;
+
+const INICIO = Date.UTC(2026, 0, 1);
+const FIM = Date.UTC(2034, 0, 1);
+const agora = Date.now();
+const progresso = Math.min(1, Math.max(0, (agora - INICIO) / (FIM - INICIO)));
+const anos = Array.from({ length: 8 }, (_, i) => 2026 + i);
+const escuro = tema === 'escuro';
+---
+
+<figure class:list={['regua', escuro ? 'text-white' : 'text-tinta']} style={`--p:${(progresso * 100).toFixed(2)}%`}>
+  <figcaption class:list={['mb-5 text-sm', escuro ? 'text-ceu' : 'text-cinza']}>
+    Transição da Reforma Tributária, conforme a EC 132/2023 e a LC 214/2025
+  </figcaption>
+
+  <div class="relative pt-8" aria-hidden="true">
+    <div class="marcador absolute top-0 -translate-x-1/2 text-xs font-semibold whitespace-nowrap" style="left: var(--p)">
+      <span class:list={['rounded-sm px-1.5 py-0.5', escuro ? 'bg-ciano text-navy-deep' : 'bg-navy text-white']}>Hoje</span>
+    </div>
+    <div class:list={['relative h-1.5 rounded-full', escuro ? 'bg-white/15' : 'bg-pedra']}>
+      <div class="barra absolute inset-y-0 left-0 rounded-full bg-ciano" style="width: var(--p)"></div>
+      <div class="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-ciano bg-navy" style="left: var(--p)"></div>
+    </div>
+    <ol class="mt-3 grid grid-cols-8 text-[0.7rem] sm:text-xs">
+      {anos.map((a) => <li class:list={[escuro ? 'text-white/55' : 'text-cinza']}>{a}</li>)}
+    </ol>
+  </div>
+
+  <ol class="mt-8 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-4">
+    {
+      reforma.map((m) => (
+        <li class:list={['border-l-2 pl-4', escuro ? 'border-ceu/40' : 'border-ciano/50']}>
+          <p class:list={['numero text-3xl', escuro ? 'text-ceu' : 'text-ciano-escuro']}>{m.ano}</p>
+          <p class="mt-2 font-semibold">{m.titulo}</p>
+          <p class:list={['mt-1 text-[0.95rem] leading-snug', escuro ? 'text-white/70' : 'text-cinza']}>{m.texto}</p>
+        </li>
+      ))
+    }
+  </ol>
+</figure>
+
+<style>
+  /* Único momento de movimento do site: a barra avança até "hoje" ao carregar. */
+  @media (prefers-reduced-motion: no-preference) {
+    .barra {
+      animation: avanca 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) both 0.2s;
+    }
+    .marcador {
+      animation: aparece 0.4s ease-out both 1.4s;
+    }
+  }
+  @keyframes avanca {
+    from { width: 0; }
+  }
+  @keyframes aparece {
+    from { opacity: 0; transform: translate(-50%, 4px); }
+  }
+</style>

@@ -1,0 +1,112 @@
+---
+import Base from '../layouts/Base.astro';
+import Cabecalho from '../components/Cabecalho.astro';
+import ReguaReforma from '../components/ReguaReforma.astro';
+import { whatsappLink } from '../data/site';
+
+const impactos = [
+  {
+    titulo: 'Sistemas e obrigações acessórias',
+    itens: [
+      'ERP e emissores de NF-e e NFC-e atualizados com os campos de IBS, CBS e Imposto Seletivo.',
+      'Novos códigos de tributação, campos de dedução e totalizadores obrigatórios na nota.',
+      'Substituição gradual da EFD-Contribuições e da EFD-ICMS/IPI pelas novas escriturações.',
+      'Integração entre fiscal, contábil e financeiro para aproveitar corretamente os créditos.',
+    ],
+  },
+  {
+    titulo: 'Contabilidade e planejamento',
+    itens: [
+      'Revisão da classificação fiscal (NCM e NBS) de produtos e serviços.',
+      'Reestruturação de plano de contas e centros de custo.',
+      'Efeitos no lucro, na formação de preço e no cálculo de IRPJ e CSLL.',
+      'Reanálise de benefícios fiscais estaduais, que serão reduzidos até 2032.',
+    ],
+  },
+];
+
+const riscos = [
+  'Rejeição de NF-e por erro de parametrização.',
+  'Perda de créditos por classificação incorreta.',
+  'Divergência entre os dados contábeis e fiscais.',
+  'ERP incompatível com as novas validações do fisco.',
+  'Multas por atraso ou erro em obrigações acessórias.',
+];
+
+const acoes = [
+  'Diagnóstico tributário e contábil para mapear riscos e adequações.',
+  'Revisão do cadastro de produtos e serviços pelas regras de IBS e CBS.',
+  'Ajuste de parametrizações fiscais e CFOPs no sistema de gestão.',
+  'Treinamento das equipes fiscal, contábil e de faturamento.',
+  'Simulação do impacto da reforma no caixa e na margem.',
+];
+---
+
+<Base
+  titulo="Reforma Tributária"
+  descricao="O que muda com a Reforma Tributária (EC 132/2023 e LC 214/2025) para empresas do Lucro Real e Presumido, cronograma até 2033 e como a G2A pode ajudar."
+  tipo="article"
+>
+  <Cabecalho
+    titulo="Reforma Tributária: o que muda para a sua empresa até 2033"
+    intro="A EC 132/2023 e a LC 214/2025 trocam PIS, Cofins, IPI, ICMS e ISS pela CBS, pelo IBS e pelo Imposto Seletivo. A mudança é gradual, mas a adaptação de sistemas e preços começa agora."
+  >
+    <div class="mt-14"><ReguaReforma /></div>
+  </Cabecalho>
+
+  <article class="container-g2a grid gap-14 py-16 md:py-24 lg:grid-cols-[1fr_17rem] lg:gap-20">
+    <div class="prosa">
+      <h2>O que é a reforma</h2>
+      <p>
+        A reforma muda a tributação sobre o consumo. PIS e Cofins dão lugar à <strong>CBS</strong> (federal), e ICMS e ISS ao{' '}
+        <strong>IBS</strong> (estados e municípios). O <strong>Imposto Seletivo</strong> incide sobre produtos prejudiciais à
+        saúde ou ao meio ambiente. O objetivo é simplificar o sistema, dar transparência ao imposto pago e acabar com a
+        cumulatividade, com crédito amplo ao longo da cadeia.
+      </p>
+      <p>
+        Na prática, durante a transição a empresa apura os dois sistemas ao mesmo tempo, o que exige atenção redobrada em
+        cadastro, nota fiscal e escrituração.
+      </p>
+
+      <h2>Impactos práticos no Lucro Real e no Presumido</h2>
+      {
+        impactos.map((b) => (
+          <>
+            <h3>{b.titulo}</h3>
+            <ul>{b.itens.map((i) => <li>{i}</li>)}</ul>
+          </>
+        ))
+      }
+
+      <h2>Riscos que mais aparecem</h2>
+      <ul>{riscos.map((r) => <li>{r}</li>)}</ul>
+
+      <h2>O que recomendamos fazer</h2>
+      <p>Esta é a ordem que seguimos com nossos clientes:</p>
+      <ol>{acoes.map((a) => <li>{a}</li>)}</ol>
+
+      <h2>Como a G2A ajuda</h2>
+      <p>
+        Assessoramos empresas do Lucro Real e do Presumido em todas as fases: consultoria para a transição fiscal, planejamento
+        tributário considerando IBS e CBS, validação do ERP com as novas regras e acompanhamento contínuo das obrigações.
+      </p>
+      <p class="text-sm text-cinza">
+        Conteúdo informativo, atualizado em novembro de 2026. Alíquotas de referência e regulamentos ainda podem ser alterados.
+      </p>
+    </div>
+
+    <aside class="space-y-4 self-start print:hidden lg:sticky lg:top-28">
+      <a href="/calculadora.html" class="block rounded-lg bg-pedra p-6 hover:bg-ceu/30">
+        <span class="titulo-medio block text-xl text-navy">Simulador da reforma</span>
+        <span class="mt-1 block text-sm text-cinza">Estime a carga de CBS e IBS sobre as suas operações.</span>
+      </a>
+      <a href={whatsappLink('Olá! Quero um diagnóstico da minha empresa para a Reforma Tributária.')} target="_blank" rel="noopener" class="block rounded-lg bg-navy p-6 text-white hover:bg-navy-deep">
+        <span class="titulo-medio block text-xl">Pedir diagnóstico</span>
+        <span class="mt-1 block text-sm text-white/70">Conversamos pelo WhatsApp sobre o caso da sua empresa.</span>
+      </a>
+      <button type="button" onclick="window.print()" class="w-full rounded-lg p-4 text-left text-sm font-semibold text-navy ring-1 ring-pedra hover:bg-pedra">
+        Salvar esta página em PDF
+      </button>
+    </aside>
+  </article>
+</Base>

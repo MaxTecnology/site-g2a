@@ -1,0 +1,83 @@
+# Stack do site da G2A para o Dokploy (tipo "Docker Compose").
+# Domínios são configurados na aba Domains do Dokploy (Traefik):
+#   site     -> g2asolucoescontabeis.com.br       (porta 4321)
+#   directus -> painel.g2asolucoescontabeis.com.br (porta 8055)
+# Variáveis: copie .env.example.compose para a aba Environment do Dokploy.
+
+services:
+  site:
+    build: .
+    restart: unless-stopped
+    environment:
+      DIRECTUS_URL: http://directus:8055
+      DIRECTUS_TOKEN: ${DIRECTUS_TOKEN}
+    depends_on:
+      - directus
+    expose:
+      - '4321'
+
+  directus:
+    image: directus/directus:12
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    expose:
+      - '8055'
+    volumes:
+      - directus_extensions:/directus/extensions
+    environment:
+      PUBLIC_URL: ${PUBLIC_DIRECTUS_URL}
+      SECRET: ${DIRECTUS_SECRET}
+      ADMIN_EMAIL: ${DIRECTUS_ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${DIRECTUS_ADMIN_PASSWORD}
+
+      DB_CLIENT: pg
+      DB_HOST: db
+      DB_PORT: '5432'
+      DB_DATABASE: directus
+      DB_USER: directus
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+
+      # Imagens e PDFs vão para o Backblaze B2 (API compatível com S3)
+      STORAGE_LOCATIONS: b2
+      STORAGE_B2_DRIVER: s3
+      STORAGE_B2_KEY: ${B2_KEY_ID}
+      STORAGE_B2_SECRET: ${B2_APPLICATION_KEY}
+      STORAGE_B2_BUCKET: ${B2_BUCKET}
+      STORAGE_B2_REGION: ${B2_REGION}
+      STORAGE_B2_ENDPOINT: https://s3.${B2_REGION}.backblazeb2.com
+      STORAGE_B2_ROOT: avisos
+
+      # Até 25 MB por arquivo; só imagens e PDF
+      FILES_MAX_UPLOAD_SIZE: 25mb
+      FILES_MIME_TYPE_ALLOW_LIST: image/jpeg,image/png,image/webp,application/pdf
+
+      # Cache das transformações de imagem e das respostas públicas
+      CACHE_ENABLED: 'true'
+      CACHE_STORE: memory
+      CACHE_AUTO_PURGE: 'true'
+      CACHE_TTL: 5m
+      ASSETS_CACHE_TTL: 30d
+
+      CORS_ENABLED: 'false'
+      TELEMETRY: 'false'
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: directus
+      POSTGRES_USER: directus
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U directus -d directus']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db_data:
+  directus_extensions:
