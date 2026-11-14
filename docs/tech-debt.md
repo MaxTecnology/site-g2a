@@ -1,0 +1,45 @@
+# Débito técnico
+
+Prioridade: **P1** resolver já · **P2** próximo ciclo · **P3** quando houver oportunidade.
+
+## 1. [P1] Rotacionar as chaves da AbstractAPI da antiga calculadora
+
+A calculadora foi removida, mas o bundle dela trazia em texto puro as API keys de validação de e-mail e telefone da AbstractAPI. Elas ficaram públicas no site e continuam no histórico do Git.
+
+- **Revogar as chaves no painel da AbstractAPI.** Limpar o histórico do Git não resolve, porque elas já foram servidas.
+- Verificar se ainda há algo usando o Google Forms de leads da calculadora e desativá-lo.
+
+## 2. ~~Calculadora sem código-fonte~~ (resolvido)
+
+Removida e substituída pelo diagnóstico de prontidão (`src/lib/prontidao.ts`), que não coleta dados pessoais e não chama serviços externos.
+
+## 3. [P2] CSP com `'unsafe-inline'` em scripts e estilos
+
+Ainda necessário para os scripts e estilos que o Astro injeta inline, o `define:vars` do contato e o JSON-LD. Sem a calculadora, a CSP não tem mais origens externas além das imagens de avisos (`https:`) e do mapa do Google. Próximo passo: avaliar `security.csp` do Astro (hashes automáticos) para eliminar o `'unsafe-inline'` dos scripts.
+
+## 4. [P2] Backups só no próprio VPS
+
+O `db-backup` grava no volume `db_backups`, no mesmo disco do banco. Se o VPS for perdido, os backups vão junto.
+
+- Enviar os dumps para um bucket B2 separado, com uma chave só de escrita (por exemplo, `rclone` no mesmo container ou o backup nativo do Dokploy).
+- Testar um restore a cada trimestre.
+
+## 5. [P3] Rate limit em memória, por instância
+
+`server.mjs` limita por IP em memória (IPv6 agrupado por /64). Funciona com uma réplica.
+
+O IP vem do `X-Forwarded-For` com `TRUSTED_PROXY_HOPS=1`. Isso só é seguro enquanto a porta 4321 não for publicada: hoje o compose usa `expose`, e o único acesso é via Traefik. Se algum dia publicar a porta, o cliente pode forjar o IP. Com mais de uma, migrar para o middleware `rateLimit` do Traefik ou para um store compartilhado (Redis).
+
+O painel (`painel.*`) não tem rate limit por IP, só `AUTH_LOGIN_ATTEMPTS`. O `RATE_LIMITER_*` global do Directus não serve: todas as leituras do site chegam do mesmo IP interno. Se necessário, usar um middleware do Traefik só no domínio do painel.
+
+## 6. [P3] Permissão de leitura de `directus_files` sem filtro por item
+
+O token do site lê os metadados de qualquer arquivo (só os campos necessários). O Directus não filtra arquivos pela relação reversa com avisos publicados. O proxy `/arquivos` é o que garante que só arquivos de avisos publicados são entregues.
+
+## 7. [P3] Conteúdo provisório
+
+`src/data/site.ts`: os `numeros` (`placeholder: true`), o `horario` e o `crc` ainda não têm os valores reais. Os números aparecem como "00" em produção.
+
+## 8. [P3] Script do Controle de jornada ainda monolítico
+
+As regras saíram para `src/lib/jornada.ts` (com testes), mas a renderização continua em template strings com `innerHTML` (escapadas por `esc`). Uma futura reescrita em componentes deixaria isso mais seguro de manter.
