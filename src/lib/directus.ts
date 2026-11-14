@@ -88,7 +88,9 @@ export function urlArquivo(arq: Arquivo, opts: { largura?: (typeof LARGURAS)[num
   return `/arquivos/${arq.id}/${encodeURIComponent(arq.filename_download)}${q}`;
 }
 
-// Cache curto de "este arquivo pertence a um aviso publicado?"
+// Short cache for "does this file belong to a published notice?".
+// Kept at 60s so an unpublished notice stops serving its files quickly.
+const TTL_PUBLICO_MS = 60_000;
 const publicados = new Map<string, { ok: boolean; ate: number }>();
 
 export async function arquivoEhPublico(id: string): Promise<boolean> {
@@ -104,7 +106,7 @@ export async function arquivoEhPublico(id: string): Promise<boolean> {
   if (data === null) return false;
   const ok = data.length > 0;
   if (publicados.size > 2000) publicados.clear();
-  publicados.set(id, { ok, ate: Date.now() + 5 * 60_000 });
+  publicados.set(id, { ok, ate: Date.now() + TTL_PUBLICO_MS });
   return ok;
 }
 

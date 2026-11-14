@@ -3,12 +3,13 @@ import Base from '../../layouts/Base.astro';
 import Cabecalho from '../../components/Cabecalho.astro';
 import { buscarAviso, urlArquivo, ehPdf, ehImagem, tamanhoLegivel, dataLonga } from '../../lib/directus';
 import { whatsappLink } from '../../data/site';
+import { sanitizarConteudo } from '../../lib/sanitize';
 
 export const prerender = false;
 
 const aviso = await buscarAviso(Astro.params.slug ?? '');
 if (!aviso) Astro.response.status = 404;
-Astro.response.headers.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=600');
+Astro.response.headers.set('Cache-Control', aviso ? 'public, max-age=60, stale-while-revalidate=600' : 'no-store');
 
 const arquivos = (aviso?.anexos ?? []).map((a) => a.directus_files_id).filter(Boolean);
 const pdfs = arquivos.filter(ehPdf);
@@ -16,6 +17,7 @@ const imagens = arquivos.filter(ehImagem);
 const outros = arquivos.filter((a) => !ehPdf(a) && !ehImagem(a));
 const capa = aviso?.capa && ehImagem(aviso.capa) ? aviso.capa : imagens[0];
 const imagemOg = capa ? urlArquivo(capa, { largura: 1200 }) : undefined;
+const conteudo = sanitizarConteudo(aviso?.conteudo);
 ---
 
 {!aviso && (
@@ -52,7 +54,7 @@ const imagemOg = capa ? urlArquivo(capa, { largura: 1200 }) : undefined;
           )
         }
 
-        {aviso.conteudo && <div class="prosa mt-10" set:html={aviso.conteudo} />}
+        {conteudo && <div class="prosa mt-10" set:html={conteudo} />}
 
         {
           imagens.filter((i) => i.id !== capa?.id).length > 0 && (

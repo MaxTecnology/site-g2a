@@ -11,13 +11,27 @@ services:
     environment:
       DIRECTUS_URL: http://directus:8055
       DIRECTUS_TOKEN: ${DIRECTUS_TOKEN}
+      # Traefik (Dokploy) is the only proxy in front of the site
+      TRUSTED_PROXY_HOPS: ${TRUSTED_PROXY_HOPS:-1}
+      RATE_LIMIT_GERAL: ${RATE_LIMIT_GERAL:-600}
+      RATE_LIMIT_ARQUIVOS: ${RATE_LIMIT_ARQUIVOS:-180}
+    # service_started, not healthy: the site degrades gracefully without the CMS
+    # (only Avisos goes empty), so it must not stay down when Directus is sick.
     depends_on:
-      - directus
+      directus:
+        condition: service_started
     expose:
       - '4321'
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:4321/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
 
   directus:
-    image: directus/directus:12
+    # Pinned: Directus upgrades may run DB migrations. Bump on purpose, after a backup.
+    image: directus/directus:12.6.1
     restart: unless-stopped
     depends_on:
       db:
@@ -26,6 +40,12 @@ services:
       - '8055'
     volumes:
       - directus_extensions:/directus/extensions
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:8055/server/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 5
     environment:
       PUBLIC_URL: ${PUBLIC_DIRECTUS_URL}
       SECRET: ${DIRECTUS_SECRET}
@@ -60,6 +80,10 @@ services:
       CACHE_TTL: 5m
       ASSETS_CACHE_TTL: 30d
 
+      # Brute force no login do painel: suspende o usuário após N senhas erradas.
+      # Não usar RATE_LIMITER_* global: todas as leituras do site vêm do mesmo IP interno.
+      AUTH_LOGIN_ATTEMPTS: '10'
+
       CORS_ENABLED: 'false'
       TELEMETRY: 'false'
 
@@ -78,6 +102,41 @@ services:
       timeout: 5s
       retries: 5
 
+  # Daily pg_dump (custom format) to a local volume, keeping BACKUP_RETENTION_DAYS days.
+  # Restore: pg_restore -h db -U directus -d directus --clean /backups/<file>.dump
+  # TODO: copy the dumps off the VPS (e.g. a separate B2 bucket), see docs/tech-debt.md
+  db-backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGUSER: directus
+      PGDATABASE: directus
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+    volumes:
+      - db_backups:/backups
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - |
+        while true; do
+          f=/backups/directus-$$(date +%Y%m%d-%H%M%S).dump
+          if pg_dump -Fc -f "$$f.tmp" && mv "$$f.tmp" "$$f"; then
+            echo "backup ok: $$f"
+            # Prune only after a successful dump, so failures never eat the old backups.
+            find /backups -name 'directus-*.dump' -mtime +"$$RETENTION_DAYS" -delete
+            sleep 86400
+          else
+            echo "backup FAILED, retrying in 5 min" >&2
+            find /backups -name '*.tmp' -delete
+            sleep 300
+          fi
+        done
+
 volumes:
   db_data:
+  db_backups:
   directus_extensions:

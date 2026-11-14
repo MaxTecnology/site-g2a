@@ -9,7 +9,7 @@ export const prerender = false;
 const pedida = Astro.url.searchParams.get('categoria') ?? '';
 const categoria = (CATEGORIAS as readonly string[]).includes(pedida) ? pedida : undefined;
 const { avisos, ok } = await listarAvisos({ categoria });
-Astro.response.headers.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=600');
+Astro.response.headers.set('Cache-Control', ok ? 'public, max-age=60, stale-while-revalidate=600' : 'no-store');
 if (!ok) Astro.response.status = 503;
 
 const filtros = [{ label: 'Todos', valor: undefined as string | undefined }, ...CATEGORIAS.map((c) => ({ label: c, valor: c }))];
