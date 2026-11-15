@@ -75,6 +75,6 @@ curl -s https://g2asolucoescontabeis.com.br/sitemap-avisos.xml   # lista home, /
 docker compose logs db-backup | tail                              # "backup ok: ..."
 ```
 
-**Arquivos com o token real:** depois de rodar o `directus:setup`, abrir um aviso com imagem e PDF e conferir se a imagem redimensionada (`?w=900`) e o download do PDF funcionam. Se derem 403/404, o `/assets` do Directus precisa de mais campos de `directus_files` do que os 7 liberados em `LEITURA_SITE`; adicione os campos pedidos e rode o setup de novo.
+**Avisos com o token real:** depois de rodar o `directus:setup`, publicar um aviso com imagem e PDF e conferir que aparecem no site; um aviso em rascunho não pode aparecer nem ter seus arquivos acessíveis. (Fluxo validado contra Directus 12.6.1 local em 14/11/2026.)
 
 Teste manual: abrir `/reforma-tributaria#diagnostico` (responder tudo, refazer, botão do WhatsApp), `/controle-de-jornada` (importar planilha, editar célula, exportar) e `/contato` (mapa), com o console do navegador aberto, procurando erros de CSP.
