@@ -30,6 +30,9 @@ describe('parseH', () => {
     ['-', 0],
     ['', 0],
     ['0', 0],
+    ['8:00:00', 480],
+    ['44:00', 2640],
+    ['44:00:00', 2640],
   ])('"%s" -> %i min', (entrada, esperado) => {
     expect(parseH(entrada)).toBe(esperado);
   });
@@ -49,6 +52,7 @@ describe('parseH', () => {
   });
 
   it('rejects minutes above 59 and garbage', () => {
+    expect(parseH('8:00:75')).toBeNaN();
     expect(parseH('8:75')).toBeNaN();
     expect(parseH('abc')).toBeNaN();
     expect(parseH('8h30x')).toBeNaN();
@@ -136,6 +140,26 @@ describe('sugerirEscala', () => {
 
   it('returns an empty week unchanged (nothing to reduce)', () => {
     expect(sugerirEscala([0, 0, 0, 0, 0, 0, 0], 42)).toEqual([0, 0, 0, 0, 0, 0, 0]);
+  });
+
+  it('adds a weekday instead of suggesting days above the 10h cap', () => {
+    // 44h over 4 days: 42h / 4 would be 10h30 per day
+    const prop = sugerirEscala(semana(11, 11, 11, 11, 0, 0, 0), 42);
+    expect(soma(prop)).toBe(h(42));
+    expect(Math.max(...prop)).toBeLessThanOrEqual(600);
+    expect(prop[4]).toBeGreaterThan(0); // Friday added
+    expect(prop.slice(5)).toEqual([0, 0]);
+  });
+
+  it('adds only as many days as needed to respect the 10h cap', () => {
+    // 40h in 2 days of 20h -> 4 days of 10h (the closest change to the current week)
+    const prop = sugerirEscala(semana(20, 20, 0, 0, 0, 0, 0), 40);
+    expect(prop).toEqual(semana(10, 10, 10, 10, 0, 0, 0));
+  });
+
+  it('flags a schedule with a day above 10h as needing adjustment', () => {
+    const atual = semana(20, 20, 0, 0, 0, 0, 0);
+    expect(analisar({ atual, prop: sugerirEscala(atual, 40) }, { etapa: 40, limdia: 480 }).precisa).toBe(true);
   });
 });
 
@@ -234,6 +258,22 @@ describe('linhaParaColaborador', () => {
 
   it('rejects a weekly total larger than a week', () => {
     expect(linhaParaColaborador({ Nome: 'Y', 'Jornada semanal': '200' }, 0)).toEqual({ invalido: 'Y' });
+  });
+
+  it('reads a weekly total typed as an Excel duration (raw:false text)', () => {
+    const r = linhaParaColaborador({ Nome: 'Z', 'Jornada semanal': '44:00', 'Dias trabalhados': '6' }, 0);
+    expect(r && 'colaborador' in r && r.colaborador.atual).toEqual(semana(8, 8, 8, 8, 8, 4, 0));
+  });
+
+  it('does not take unrelated columns as worked days or registration number', () => {
+    const r = linhaParaColaborador({ Nome: 'Z', Idade: '34', 'Jornada semanal': '44', 'Dias de folga': '1' }, 0);
+    expect(r && 'colaborador' in r && r.colaborador.mat).toBe('L2');
+    // "Dias de folga" ignored: 44h -> default 6 days
+    expect(r && 'colaborador' in r && r.colaborador.atual).toEqual(semana(8, 8, 8, 8, 8, 4, 0));
+  });
+
+  it('rejects a weekly total that would put more than 24h in a day', () => {
+    expect(linhaParaColaborador({ Nome: 'Z', 'Jornada semanal': '44', 'Dias trabalhados': '1' }, 0)).toEqual({ invalido: 'Z' });
   });
 });
 

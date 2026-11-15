@@ -57,8 +57,10 @@ export function fmt(min: number | null | undefined, opt?: 'in'): string {
 
 /**
  * Parses a duration typed by the user or read from a spreadsheet into minutes.
- * Accepts "8", "8h", "8,5", "8.5", "8:30", "8h30", "8h30min", "folga", "-", Excel time
- * fractions (0.3333 = 8h) and plain numbers (hours). Returns NaN when it cannot parse.
+ * Accepts "8", "8h", "8,5", "8.5", "8:30", "8:30:00", "44:00", "8h30", "8h30min", "folga", "-",
+ * fractions of a day below 1 (0.3333 = 8h) and plain numbers (hours). Returns NaN when it cannot parse.
+ * Spreadsheets must be read as formatted text (sheet_to_json raw:false): a raw Excel duration
+ * of 44:00 is the number 1.8333 (days) and cannot be told apart from 1.83 hours.
  */
 export function parseH(v: unknown): number {
   if (v == null) return 0;
@@ -68,10 +70,10 @@ export function parseH(v: unknown): number {
   }
   const s = String(v).trim().toLowerCase().replace(/\s/g, '');
   if (!s || s === '-' || s === 'folga' || s === '0') return 0;
-  let m = s.match(/^(\d{1,3})[:h](\d{1,2})?(?:m|min)?$/);
+  let m = s.match(/^(\d{1,3})[:h](\d{1,2})?(?::(\d{1,2}))?(?:m|min)?$/);
   if (m) {
     const min = m[2] ? +m[2] : 0;
-    if (min > 59) return NaN;
+    if (min > 59 || (m[3] && +m[3] > 59)) return NaN;
     return +m[1] * 60 + min;
   }
   m = s.match(/^(\d{1,3})(?:[.,](\d+))?h?$/);
@@ -91,7 +93,8 @@ export function sugerirEscala(atual: Escala, etapa: number): Escala {
   const lim = limiteSemanal(etapa);
   const maxDias = 7 - folgasMinimas(etapa);
   const total = soma(atual);
-  if (total <= lim && diasTrabalhados(atual) <= maxDias) return atual.slice();
+  const conforme = total <= lim && diasTrabalhados(atual) <= maxDias && Math.max(...atual) <= MAX_DIA_MIN;
+  if (conforme) return atual.slice();
 
   let dias = atual.map((v, i) => (v > 0 ? i : -1)).filter((i) => i >= 0);
   if (!dias.length) dias = [0, 1, 2, 3, 4];
@@ -102,6 +105,11 @@ export function sugerirEscala(atual: Escala, etapa: number): Escala {
     dias = dias.filter((d) => d !== tirar);
   }
   const meta = Math.round(Math.min(total, lim));
+  // Spread over more days (weekdays first) before letting a suggested day pass the 10h cap.
+  for (const d of [0, 1, 2, 3, 4, SAB]) {
+    if (meta / dias.length <= MAX_DIA_MIN || dias.length >= maxDias) break;
+    if (!dias.includes(d)) dias = [...dias, d].sort((a, b) => a - b);
+  }
   const base = Math.floor(meta / dias.length);
   const extra = meta - base * dias.length;
   const out = [0, 0, 0, 0, 0, 0, 0];
@@ -120,7 +128,7 @@ export function analisar(e: { atual: Escala; prop: Escala }, cfg: Config): Anali
   const tot = soma(e.prop);
   const diasAt = diasTrabalhados(e.atual);
   const diasNv = diasTrabalhados(e.prop);
-  const precisa = atual > lim || 7 - diasAt < folgas;
+  const precisa = atual > lim || 7 - diasAt < folgas || Math.max(...e.atual) > MAX_DIA_MIN;
 
   const alerts: Alerta[] = [];
   if (tot > lim) alerts.push(['crit', `Total acima de ${cfg.etapa}h`]);
@@ -154,13 +162,18 @@ const CHAVES_DIA = [
 
 type Linha = Record<string, unknown>;
 
-function pegar(row: Linha, nomes: string[]) {
+/** Column lookup by normalized header. Prefix matching ("nomecompleto") unless `exato`. */
+function pegar(row: Linha, nomes: string[], exato = false) {
   for (const k of Object.keys(row)) {
     const n = norm(k);
-    if (nomes.some((x) => n === x || n.startsWith(x))) return row[k];
+    if (nomes.some((x) => n === x || (!exato && n.startsWith(x)))) return row[k];
   }
   return undefined;
 }
+
+// Exact names only: a prefix would match "Idade" as "id" or "Dias de folga" as "dias".
+const COLUNAS_MATRICULA = ['matricula', 'mat', 'codigo', 'cod', 'id', 'registro', 'chapa'];
+const COLUNAS_DIAS = ['diastrabalhados', 'diasporsemana', 'diasdetrabalho', 'diastrabalhadosnasemana', 'dias'];
 
 const SEMANA_44H = 44 * 60;
 
@@ -188,7 +201,7 @@ export function linhaParaColaborador(row: Linha, indice: number): ResultadoLinha
   const nomeBruto = pegar(row, ['nome', 'colaborador', 'funcionario', 'empregado']);
   const nome = String(nomeBruto ?? '').trim();
   if (!nome) return null;
-  const mat = String(pegar(row, ['matricula', 'mat', 'codigo', 'cod', 'id']) ?? '').trim() || `L${indice + 2}`;
+  const mat = String(pegar(row, COLUNAS_MATRICULA, true) ?? '').trim() || `L${indice + 2}`;
 
   const porDia = CHAVES_DIA.map((chaves) => {
     const k = Object.keys(row).find((c) => chaves.includes(norm(c)));
@@ -200,9 +213,10 @@ export function linhaParaColaborador(row: Linha, indice: number): ResultadoLinha
     const semanal = parseH(pegar(row, ['jornadasemanal', 'horassemanais', 'cargahoraria', 'jornada', 'cargasemanal']));
     if (!semanal || Number.isNaN(semanal)) return { semHoras: nome };
     if (semanal > 7 * MIN_POR_DIA) return { invalido: nome };
-    const diasInformados = parseInt(String(pegar(row, ['diastrabalhados', 'dias', 'diasporsemana']) ?? ''), 10);
+    const diasInformados = parseInt(String(pegar(row, COLUNAS_DIAS, true) ?? ''), 10);
     const dias = diasInformados >= 1 && diasInformados <= 7 ? diasInformados : semanal >= SEMANA_44H ? 6 : 5;
     atual = distribuirSemana(semanal, dias);
+    if (atual.some((v) => !horaValida(v))) return { invalido: nome };
   } else {
     if (porDia.some((v) => v !== undefined && !horaValida(v))) return { invalido: nome };
     atual = porDia.map((v) => v ?? 0);

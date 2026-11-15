@@ -334,7 +334,7 @@ function handleFile(file) {
   rd.onload = () => {
     try {
       const wb = XLSX.read(new Uint8Array(rd.result), { type: "array" });
-      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "", raw: true });
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "", raw: false });
       if (state.exemplo) { state.emps = []; state.lanc = {}; state.exemplo = false; }
       const r = importRows(rows);
       if (!r.novos && !r.upd) { msg.className = "msg err"; msg.textContent = (r.invalidos.length ? `Horas inválidas em: ${r.invalidos.slice(0, 5).join(", ")}. ` : "") + "Nenhum colaborador encontrado. Confira se a planilha tem a coluna Nome e as horas (por dia ou Jornada semanal)."; render(); return; }
