@@ -10,6 +10,10 @@ import {
   parseH,
   soma,
   sugerirEscala,
+  escalaSemAcordo,
+  exigeAcordo,
+  resumoSemana,
+  MODELOS_SEMANA,
 } from '../src/lib/jornada';
 
 const h = (x: number) => Math.round(x * 60);
@@ -256,6 +260,11 @@ describe('linhaParaColaborador', () => {
     expect(r && 'colaborador' in r && r.colaborador.atual).toEqual(semana(0, 8, 0, 0, 0, 0, 0));
   });
 
+  it('reports an unreadable weekly total as invalid, not as missing', () => {
+    expect(linhaParaColaborador({ Nome: 'Y', 'Jornada semanal': '8:75' }, 0)).toEqual({ invalido: 'Y' });
+    expect(linhaParaColaborador({ Nome: 'Y', 'Jornada semanal': '' }, 0)).toEqual({ semHoras: 'Y' });
+  });
+
   it('rejects a weekly total larger than a week', () => {
     expect(linhaParaColaborador({ Nome: 'Y', 'Jornada semanal': '200' }, 0)).toEqual({ invalido: 'Y' });
   });
@@ -281,5 +290,49 @@ describe('esc', () => {
   it('escapes HTML special characters', () => {
     expect(esc(`<img src=x onerror="a('b')">&`)).toBe('&lt;img src=x onerror=&quot;a(&#39;b&#39;)&quot;&gt;&amp;');
     expect(esc(null)).toBe('');
+  });
+});
+
+describe('escalaSemAcordo', () => {
+  it('44h in 6 days under the 42h rule becomes 5 x 8h, with no day above 8h', () => {
+    const r = escalaSemAcordo(semana(8, 8, 8, 8, 8, 4, 0), 42, 480);
+    expect(r).toEqual(semana(8, 8, 8, 8, 8, 0, 0));
+    expect(exigeAcordo(r, 480)).toBe(false);
+  });
+
+  it('keeps the suggestion when it already fits the daily limit', () => {
+    const atual = semana(8, 8, 8, 8, 8, 0, 0);
+    expect(escalaSemAcordo(atual, 42, 480)).toEqual(sugerirEscala(atual, 42));
+  });
+
+  it('respects a different daily limit', () => {
+    const r = escalaSemAcordo(semana(9, 9, 9, 9, 8, 0, 0), 42, 528);
+    expect(Math.max(...r)).toBeLessThanOrEqual(528);
+    expect(r.slice(5)).toEqual([0, 0]);
+  });
+
+  it('returns an empty week unchanged', () => {
+    expect(escalaSemAcordo([0, 0, 0, 0, 0, 0, 0], 42, 480)).toEqual([0, 0, 0, 0, 0, 0, 0]);
+  });
+});
+
+describe('exigeAcordo', () => {
+  it('is true only between the daily limit and the 10h cap', () => {
+    expect(exigeAcordo(semana(8.4, 8, 0, 0, 0, 0, 0), 480)).toBe(true);
+    expect(exigeAcordo(semana(8, 8, 0, 0, 0, 0, 0), 480)).toBe(false);
+    expect(exigeAcordo(semana(11, 0, 0, 0, 0, 0, 0), 480)).toBe(false); // above 10h is an error, not an agreement
+  });
+});
+
+describe('resumoSemana and MODELOS_SEMANA', () => {
+  it('describes a week in plain words', () => {
+    expect(resumoSemana(semana(8, 8, 8, 8, 8, 4, 0))).toBe('44h em 6 dias');
+    expect(resumoSemana(semana(6, 0, 0, 0, 0, 0, 0))).toBe('6h em 1 dia');
+  });
+  it('ready-made weeks add up to what their label says', () => {
+    for (const m of MODELOS_SEMANA) {
+      const horas = Number(m.rotulo.match(/\((\d+)h\)/)![1]);
+      expect(soma(m.dias)).toBe(horas * 60);
+    }
   });
 });

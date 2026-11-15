@@ -44,9 +44,12 @@ Quem garante que só o publicado chega ao visitante é o site: toda consulta fil
 
 `src/data/site.ts`: os `numeros` (`placeholder: true`), o `horario` e o `crc` ainda não têm os valores reais. Os números aparecem como "00" em produção.
 
-## 8. [P3] Script do Controle de jornada ainda monolítico
+## 8. [P1] Base legal do Controle de jornada não verificada
 
-As regras saíram para `src/lib/jornada.ts` (com testes), mas a renderização continua em template strings com `innerHTML` (escapadas por `esc`). Uma futura reescrita em componentes deixaria isso mais seguro de manter.
+A ferramenta usa a "EC nº 141/2026, promulgada em 16/10/2026" (44h até 15/12/2026; 42h e 2 folgas a partir de 16/12/2026; 40h a partir de 16/12/2027) e o limite de 8h/dia sem acordo de compensação (CLT art. 59). Essa base veio do projeto anterior e não foi conferida por um contador.
+
+- Um contador do departamento pessoal precisa confirmar número, datas e limites antes de divulgar a ferramenta.
+- Se mudar, ajustar `folgasMinimas`, as opções de etapa em `src/pages/controle-de-jornada.astro` e o texto "Regras usadas".
 
 ## 9. [P3] Identificadores e comentários em português
 

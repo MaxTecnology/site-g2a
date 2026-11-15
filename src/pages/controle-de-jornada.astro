@@ -2,520 +2,449 @@
 import Base from '../layouts/Base.astro';
 import Cabecalho from '../components/Cabecalho.astro';
 import { whatsappLink } from '../data/site';
-// Planejador de jornada 5x2 (fim da escala 6x1). Roda inteiro no navegador do visitante:
-// nenhum dado de colaborador é enviado ao servidor. Persistência em localStorage + backup .json.
+import { DIAS, MODELOS_SEMANA } from '../lib/jornada';
+// Planejador da nova escala (fim da 6x1). Roda inteiro no navegador: nenhum dado de
+// colaborador vai para o servidor. Regras em src/lib/jornada.ts (testadas).
+
+const campoDia =
+  'w-full rounded-md border border-cinza/30 bg-white px-1 py-2 text-center text-sm tabular-nums text-tinta placeholder:text-cinza/60 focus:border-ciano focus:outline-none focus:ring-2 focus:ring-ciano/30';
 ---
 
 <Base
   titulo="Controle de jornada: fim da escala 6x1"
-  descricao="Ferramenta gratuita da G2A para adaptar a escala dos colaboradores ao fim da 6x1 (EC 141/2026): importe a planilha, veja quanto cada um precisa reduzir e acompanhe as horas da semana."
+  descricao="Ferramenta gratuita da G2A: cadastre os colaboradores e veja quem precisa mudar de escala com o fim da 6x1, como fica a nova semana e quando é preciso acordo de compensação."
 >
   <Cabecalho
-    titulo="Controle de jornada para o fim da escala 6x1"
-    intro="Importe a planilha com a escala dos seus colaboradores, veja quanto cada um precisa reduzir para 42h e 2 folgas e acompanhe as horas da semana. Os dados ficam só no seu computador."
-  >
-    <p class="mt-6 text-sm text-white/70">
-      Dúvidas sobre acordo de compensação ou convenção coletiva?{' '}
-      <a class="font-semibold text-ceu underline underline-offset-4" href={whatsappLink('Olá! Quero ajuda com a adaptação da escala 6x1 dos meus funcionários.')} target="_blank" rel="noopener">Fale com o nosso departamento pessoal</a>.
-    </p>
-  </Cabecalho>
+    titulo="Quem da sua equipe precisa mudar de escala?"
+    intro="Com o fim da escala 6x1, a jornada passa a ter um limite semanal menor e 2 folgas. Cadastre seus colaboradores e veja, para cada um, como fica a nova semana. Os dados ficam só neste navegador."
+  />
 
-  <div class="pj">
-<div class="wrap container-g2a">
-  <div class="pj-barra">
-    <p>Escolha a etapa da lei para comparar as escalas. O limite diário define quando um dia passa a exigir acordo de compensação.</p>
-    <div class="rule" style="margin-left:0">
-      <label class="f" for="etapa">Etapa da lei
-        <select id="etapa">
-          <option value="44">Atual · 44h/semana</option>
-          <option value="42" selected>A partir de 16/12/2026 · 42h e 2 folgas</option>
-          <option value="40">A partir de 16/12/2027 · 40h e 2 folgas</option>
-        </select>
-      </label>
-      <label class="f" for="limdia">Limite diário sem acordo
-        <select id="limdia">
-          <option value="480" selected>8h</option>
-          <option value="528">8h48</option>
-          <option value="600">10h</option>
-        </select>
-      </label>
-    </div>
-  </div>
-  <nav class="tabs" aria-label="Etapas do planejador">
-    <a href="#importar" data-v="importar">1. Importar planilha</a>
-    <a href="#analise" data-v="analise">2. Análise e nova escala <span class="ct" id="ctA">0</span></a>
-    <a href="#semana" data-v="semana">3. Controle da semana</a>
-  </nav>
-
-  <div class="banner" id="exBanner" hidden>
-    <span><b>Dados de exemplo.</b> Importe a planilha da empresa para substituir.</span>
-    <button class="sm" id="goImport">Importar planilha</button>
-  </div>
-
-  <!-- IMPORTAR -->
-  <section id="v-importar" hidden>
-    <div class="drop" id="drop">
-      <strong>Arraste a planilha aqui (.xlsx, .xls ou .csv)</strong>
-      <p>ou</p>
-      <label for="file" class="hint">Escolher arquivo:</label>
-      <input type="file" id="file" accept=".xlsx,.xls,.csv">
-      <p class="hint">A primeira aba é lida. Linhas com a mesma matrícula são atualizadas.</p>
-      <div class="msg" id="impMsg" role="status"></div>
-    </div>
-    <div class="bar" style="margin-top:12px">
-      <button id="btnModelo">Baixar planilha modelo</button>
-      <button id="btnBackup">Salvar backup (.json)</button>
-      <label for="restore" class="hint" style="display:inline-flex;gap:6px;align-items:center">Restaurar backup <input type="file" id="restore" accept=".json"></label>
-      <span class="grow"></span>
-      <button class="danger" id="btnLimpar">Apagar todos os dados</button>
-      <span class="confirm" id="cfLimpar">Apagar colaboradores e lançamentos? <button class="sm danger" id="cfSim">Apagar</button><button class="sm" id="cfNao">Cancelar</button></span>
-    </div>
-    <div class="cols">
-      <div class="card">
-        <h3>Colunas reconhecidas</h3>
-        <ul>
-          <li><code>Matrícula</code>, <code>Nome</code>, <code>Cargo</code>, <code>Setor</code></li>
-          <li>Horas por dia: <code>Seg</code> <code>Ter</code> <code>Qua</code> <code>Qui</code> <code>Sex</code> <code>Sáb</code> <code>Dom</code> (ou o nome do dia por extenso)</li>
-          <li>Ou só <code>Jornada semanal</code> + <code>Dias trabalhados</code></li>
-          <li>Horas em <code>8:24</code>, <code>8h24</code>, <code>8,4</code> ou formato de hora do Excel</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>O que o sistema faz</h3>
-        <ul>
-          <li>Compara a escala de cada um com o limite da etapa escolhida</li>
-          <li>Calcula quantas horas cada colaborador precisa reduzir</li>
-          <li>Sugere a nova escala com 2 folgas, distribuindo as horas por dia</li>
-          <li>No controle da semana, as horas lançadas vão abatendo do saldo de cada um</li>
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  <!-- ANÁLISE -->
-  <section id="v-analise" hidden>
-    <div class="tiles" id="tilesA"></div>
-    <div class="bar">
-      <input type="search" id="qA" placeholder="Buscar colaborador" aria-label="Buscar colaborador">
-      <select id="fA" aria-label="Filtrar situação">
-        <option value="">Todas as situações</option>
-        <option value="aj">Precisam ajustar</option>
-        <option value="ok">Já conformes</option>
-        <option value="al">Com alerta na nova escala</option>
+  <div class="container-g2a py-12 md:py-16">
+    <p class="flex flex-wrap items-center gap-x-3 gap-y-2 text-cinza">
+      <label for="etapa">Comparando com a regra</label>
+      <select id="etapa" class="rounded-md border border-cinza/30 bg-white px-3 py-2 font-semibold text-navy focus:border-ciano focus:outline-none focus:ring-2 focus:ring-ciano/30">
+        <option value="42" selected>de 16/12/2026: até 42h e 2 folgas</option>
+        <option value="40">de 16/12/2027: até 40h e 2 folgas</option>
+        <option value="44">atual: até 44h e 1 folga</option>
       </select>
-      <span class="grow"></span>
-      <button id="btnResetProp">Refazer sugestões</button>
-      <button class="pri" id="btnExpA">Exportar nova escala (.xlsx)</button>
-    </div>
-    <p class="hint">A nova escala é uma sugestão: clique nas horas de qualquer dia para ajustar. Deixe vazio para folga.</p>
-    <div class="card scroll">
-      <table>
-        <thead><tr>
-          <th>Colaborador</th><th class="n">Hoje</th><th class="n">Nova meta</th><th class="n">Reduzir</th>
-          <th class="d">Seg</th><th class="d">Ter</th><th class="d">Qua</th><th class="d">Qui</th><th class="d">Sex</th><th class="d">Sáb</th><th class="d">Dom</th>
-          <th class="n">Total</th><th>Situação</th>
-        </tr></thead>
-        <tbody id="tbA"></tbody>
-      </table>
-    </div>
-  </section>
+      <a href="#base-legal" class="text-sm underline underline-offset-4">de onde vem essa regra</a>
+    </p>
 
-  <!-- SEMANA -->
-  <section id="v-semana" hidden>
-    <div class="bar">
-      <button class="sm" id="wPrev" aria-label="Semana anterior">◀</button>
-      <label class="f" for="wDate">Semana de
-        <input type="date" id="wDate">
-      </label>
-      <button class="sm" id="wNext" aria-label="Próxima semana">▶</button>
-      <strong id="wLabel" class="num"></strong>
-      <span class="grow"></span>
-      <select id="fillDay" aria-label="Dia para preencher"></select>
-      <button id="btnFill">Lançar o previsto deste dia</button>
-      <button class="pri" id="btnExpS">Exportar semana (.xlsx)</button>
-    </div>
-    <div class="tiles" id="tilesS"></div>
-    <div class="bar"><input type="search" id="qS" placeholder="Buscar colaborador" aria-label="Buscar colaborador na semana"><span class="hint">Digite as horas trabalhadas em cada dia. O saldo da semana diminui sozinho.</span></div>
-    <div class="card scroll">
-      <table>
-        <thead><tr id="thS"></tr></thead>
-        <tbody id="tbS"></tbody>
-      </table>
-    </div>
-  </section>
+    <div class="mt-10 grid gap-10 lg:grid-cols-[22rem_1fr] lg:gap-14">
+      <!-- Adicionar -->
+      <aside class="self-start lg:sticky lg:top-28">
+        <form id="form-add" class="rounded-lg bg-pedra p-5 md:p-6" novalidate autocomplete="off">
+          <h2 class="titulo-medio text-2xl text-navy">Adicionar colaborador</h2>
+          <label class="mt-5 block font-medium">Nome
+            <input name="nome" required maxlength="80" class="mt-1.5 block w-full rounded-md border border-cinza/30 bg-white px-3.5 py-2.5 focus:border-ciano focus:outline-none focus:ring-2 focus:ring-ciano/30" />
+          </label>
 
-  <div class="pj-notas" style="margin-top:24px;font-size:13px;color:var(--muted);max-width:80ch">
-    Regras usadas: EC nº 141/2026 (promulgada em 16/10/2026). Até 15/12/2026 vale o limite de 44h. De 16/12/2026 em diante, 42h e 2 dias de descanso por semana. A partir de 16/12/2027, 40h.
-    Dia previsto acima de 8h exige acordo de compensação ou previsão em convenção coletiva (CLT art. 59). Horas extras habituais e casos de convenção coletiva
-    devem ser conferidos pelo departamento pessoal. Os dados ficam salvos neste navegador; use “Salvar backup” para guardar uma cópia.
-  </div>
-</div>
+          <fieldset class="mt-5">
+            <legend class="font-medium">Como é a semana dele hoje?</legend>
+            <div class="mt-2 flex flex-wrap gap-2">
+              {MODELOS_SEMANA.map((m, i) => (
+                <button type="button" data-modelo={i} class="rounded-full bg-white px-3 py-1.5 text-sm text-navy ring-1 ring-navy/15 hover:ring-navy/40">{m.rotulo}</button>
+              ))}
+            </div>
+            <p class="mt-3 text-sm text-cinza">Ou digite as horas de cada dia (ex.: 8, 8:30). Vazio é folga.</p>
+            <div class="mt-2 grid grid-cols-7 gap-1.5">
+              {DIAS.map((d, i) => (
+                <label class="text-center text-xs font-semibold text-cinza">
+                  {d}
+                  <input name={`d${i}`} inputmode="decimal" placeholder="–" aria-label={`Horas de ${d} (vazio é folga)`} class:list={[campoDia, 'mt-1']} />
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <p id="add-erro" class="mt-3 text-sm font-medium text-red-700" role="alert" hidden></p>
+          <button type="submit" class="mt-5 w-full rounded-md bg-navy px-5 py-3 font-semibold text-white hover:bg-navy-deep">Adicionar à lista</button>
+        </form>
+
+        <details class="mt-4 rounded-lg p-5 ring-1 ring-pedra">
+          <summary class="cursor-pointer font-semibold text-navy">Muitos funcionários? Importe uma planilha</summary>
+          <p class="mt-3 text-sm text-cinza">
+            Uma linha por colaborador, com as colunas <b>Nome</b> e as horas de <b>Seg</b> a <b>Dom</b>. Ou só <b>Jornada semanal</b> e <b>Dias trabalhados</b>.
+            Opcionais: Matrícula, Cargo, Setor.
+          </p>
+          <div class="mt-4 flex flex-col gap-2">
+            <label class="block cursor-pointer rounded-md bg-navy px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-navy-deep focus-within:outline-3 focus-within:outline-offset-2 focus-within:outline-ciano">
+              Escolher planilha (.xlsx ou .csv)
+              <input type="file" id="arquivo" accept=".xlsx,.xls,.csv" class="sr-only" />
+            </label>
+            <button type="button" id="btn-modelo" class="rounded-md px-4 py-2.5 text-sm font-semibold text-navy ring-1 ring-navy/20 hover:bg-pedra">Baixar planilha modelo</button>
+          </div>
+          <p id="imp-msg" class="mt-3 text-sm" role="status"></p>
+        </details>
+      </aside>
+
+      <!-- Resultado -->
+      <section aria-labelledby="resultado-titulo">
+        <h2 id="resultado-titulo" class="sr-only">Resultado</h2>
+
+        <div id="vazio" class="rounded-lg p-8 text-center ring-1 ring-pedra" hidden>
+          <p class="titulo-medio text-2xl text-navy">Sua lista está vazia</p>
+          <p class="mx-auto mt-2 max-w-md text-cinza">Adicione o primeiro colaborador no formulário ao lado e o resultado aparece aqui.</p>
+          <button type="button" id="btn-exemplo" class="mt-5 font-semibold text-ciano-escuro underline underline-offset-4">Ver um exemplo com 6 colaboradores</button>
+        </div>
+
+        <div id="com-dados" hidden>
+          <div id="exemplo-aviso" class="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg bg-amber-50 px-5 py-3 text-sm ring-1 ring-amber-200" hidden>
+            <span>Estes são <b>colaboradores de exemplo</b>.</span>
+            <button type="button" id="btn-limpar-exemplo" class="font-semibold text-navy underline underline-offset-4">Apagar o exemplo e começar a minha lista</button>
+          </div>
+
+          <p id="resumo" class="titulo-medio text-2xl text-navy md:text-3xl" aria-live="polite"></p>
+          <p id="resumo-sub" class="mt-2 text-cinza"></p>
+
+          <ul id="lista" class="mt-8 space-y-4"></ul>
+
+          <div class="mt-10 rounded-lg bg-navy p-6 text-white md:p-8">
+            <p class="titulo-medio text-2xl">Quer ajuda para colocar a nova escala em prática?</p>
+            <p class="mt-2 max-w-prose text-white/75">
+              Acordo de compensação, convenção coletiva e ajuste do ponto eletrônico ficam com o nosso departamento pessoal.
+              O resumo enviado leva só os números, sem o nome dos colaboradores.
+            </p>
+            <div class="mt-6 flex flex-wrap gap-3">
+              <a id="btn-whatsapp" href={whatsappLink()} target="_blank" rel="noopener" class="rounded-md bg-ciano px-5 py-3 font-semibold text-navy-deep hover:bg-ceu">Enviar resumo pelo WhatsApp</a>
+              <button type="button" id="btn-exportar" class="rounded-md px-5 py-3 font-semibold text-white ring-1 ring-white/30 hover:bg-white/10">Baixar a nova escala (.xlsx)</button>
+            </div>
+          </div>
+
+          <p class="mt-6 text-sm">
+            <button type="button" id="btn-apagar" class="font-semibold text-red-700 underline underline-offset-4">Apagar todos os colaboradores</button>
+            <span id="confirma-apagar" class="ml-2" hidden>
+              Tem certeza?
+              <button type="button" id="btn-apagar-sim" class="ml-2 font-semibold text-red-700 underline underline-offset-4">Sim, apagar</button>
+              <button type="button" id="btn-apagar-nao" class="ml-2 underline underline-offset-4">Cancelar</button>
+            </span>
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <div id="base-legal" class="mt-16 max-w-[80ch] scroll-mt-28 border-t border-pedra pt-8 text-sm text-cinza">
+      <h2 class="font-semibold text-navy">Regras usadas</h2>
+      <p class="mt-2">
+        EC nº 141/2026 (promulgada em 16/10/2026): até 15/12/2026 vale o limite de 44h semanais. De 16/12/2026 em diante, 42h e
+        2 dias de descanso por semana. A partir de 16/12/2027, 40h. Nenhum dia pode passar de 10h, e dia acima de 8h exige
+        acordo de compensação ou previsão em convenção coletiva (CLT, art. 59).
+      </p>
+      <p class="mt-2">
+        A ferramenta faz uma sugestão inicial. Horas extras habituais, escalas especiais e regras da convenção coletiva da sua
+        categoria devem ser conferidas pelo departamento pessoal.
+      </p>
+    </div>
   </div>
 </Base>
 
-<script is:inline src="/vendor/xlsx.full.min.js"></script>
 <script>
-import {
-  DIAS as DAYS, fmt, parseH, soma as sum, horaValida, limiteSemanal, folgasMinimas,
-  sugerirEscala, analisar, linhaParaColaborador, esc,
-} from '../lib/jornada';
+  import {
+    DIAS, MODELOS_SEMANA, fmt, parseH, soma, horaValida, folgasMinimas, sugerirEscala, escalaSemAcordo,
+    exigeAcordo, analisar, linhaParaColaborador, resumoSemana, esc, type Colaborador, type Escala,
+  } from '../lib/jornada';
+  import { whatsappLink } from '../data/site';
 
-(() => {
-"use strict";
-const KEY = "planejador-jornada-5x2.v1";
-const $ = s => document.querySelector(s);
+  type Pessoa = Colaborador & { semAcordo?: boolean };
+  type Estado = { emps: Pessoa[]; etapa: number; limdia: number; exemplo?: boolean };
 
-/* ---------- estado ---------- */
-let state = load() || demo();
-function demo() {
-  const H = h => Math.round(h * 60);
-  const emps = [
-    ["1001","Maria Souza","Atendente","Loja",[8,8,8,8,8,4,0]],
-    ["1002","João Lima","Estoquista","Depósito",[8,8,8,8,8,4,0]],
-    ["1003","Ana Ferreira","Caixa","Loja",[7.33,7.33,7.33,7.33,7.33,7.33,0]],
-    ["1004","Carlos Melo","Repositor","Loja",[0,8,8,8,8,8,4]],
-    ["1005","Paula Rocha","Auxiliar adm.","Escritório",[8,8,8,8,8,0,0]],
-    ["1006","Rafael Dias","Vendedor (meio período)","Loja",[6,6,6,6,6,0,0]],
-  ].map(([mat,nome,cargo,setor,d]) => ({ id: mat, mat, nome, cargo, setor, atual: d.map(H), prop: null }));
-  return { exemplo: true, emps, lanc: {}, etapa: 42, limdia: 480 };
-}
-function load() { try { const s = localStorage.getItem(KEY); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
-let saveT;
-function save() { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }, 250); }
+  const CHAVE = 'planejador-jornada-5x2.v1';
+  const $ = <T extends HTMLElement>(s: string) => document.querySelector<T>(s)!;
 
-/* ---------- regras (src/lib/jornada.ts) ---------- */
-const folgasMin = () => folgasMinimas(state.etapa);
-function analyze(e) {
-  if (!e.prop) e.prop = sugerirEscala(e.atual, state.etapa);
-  return analisar(e, { etapa: state.etapa, limdia: state.limdia });
-}
-
-/* ---------- rotas ---------- */
-const VIEWS = ["importar","analise","semana"];
-function route() {
-  let v = location.hash.slice(1); if (!VIEWS.includes(v)) v = "analise";
-  VIEWS.forEach(x => { $("#v-" + x).hidden = x !== v; });
-  document.querySelectorAll("nav.tabs a").forEach(a => { if (a.dataset.v === v) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
-  render();
-}
-window.addEventListener("hashchange", route);
-
-/* ---------- ANÁLISE ---------- */
-function renderA() {
-  const q = $("#qA").value.trim().toLowerCase(), f = $("#fA").value;
-  let nAj = 0, red = 0, nAl = 0, rows = [];
-  state.emps.forEach((e, idx) => {
-    const a = analyze(e);
-    if (a.precisa) nAj++;
-    red += a.reduzir;
-    const temAlerta = a.alerts.some(x => x[0] !== "info");
-    if (temAlerta) nAl++;
-    if (q && !(e.nome + " " + e.mat + " " + (e.setor||"")).toLowerCase().includes(q)) return;
-    if (f === "aj" && !a.precisa) return;
-    if (f === "ok" && a.precisa) return;
-    if (f === "al" && !temAlerta) return;
-    const sit = (a.precisa ? `<span class="pill p-warn">Ajustar</span>` : `<span class="pill p-ok">Já conforme</span>`) +
-      (a.alerts.length ? a.alerts.map(([k, t]) => `<span class="pill p-${k}">${t}</span>`).join("") : (a.precisa ? `<span class="pill p-ok">Nova escala OK</span>` : ""));
-    const cells = e.prop.map((v, d) => `<td class="d"><input class="h${v ? "" : " off"}" id="p-${idx}-${d}" data-i="${idx}" data-d="${d}" value="${v ? fmt(v, "in") : ""}" placeholder="folga" aria-label="${DAYS[d]} de ${esc(e.nome)}"></td>`).join("");
-    rows.push(`<tr>
-      <td class="who left"><b>${esc(e.nome)}</b><span>${esc(e.mat)}${e.cargo ? " · " + esc(e.cargo) : ""}${e.setor ? " · " + esc(e.setor) : ""}</span></td>
-      <td class="n">${fmt(a.atual)}<br><span class="hint">${a.diasAt} dias</span></td>
-      <td class="n"><b>${fmt(a.meta)}</b></td>
-      <td class="n">${a.reduzir ? "−" + fmt(a.reduzir) : "—"}</td>
-      ${cells}
-      <td class="n"><b>${fmt(a.tot)}</b><br><span class="hint">${a.diasNv} dias</span></td>
-      <td>${sit}</td></tr>`);
-  });
-  $("#tbA").innerHTML = rows.join("") || `<tr><td colspan="13" class="hint">Nenhum colaborador encontrado.</td></tr>`;
-  const n = state.emps.length;
-  $("#tilesA").innerHTML = tile("Colaboradores", n) + tile("Precisam ajustar", nAj, n ? Math.round(nAj / n * 100) + "% da equipe" : "") +
-    tile("Horas a reduzir por semana", fmt(red), n ? "média de " + fmt(red / Math.max(nAj, 1)) + " por pessoa ajustada" : "") +
-    tile("Com alerta na nova escala", nAl, `limite ${state.etapa}h · ${folgasMin()} folga${folgasMin() > 1 ? "s" : ""}`);
-  $("#ctA").textContent = n;
-}
-$("#tbA").addEventListener("change", ev => {
-  const t = ev.target; if (!t.matches("input.h")) return;
-  const v = parseH(t.value);
-  if (!horaValida(v)) { t.classList.add("bad"); return; }
-  t.classList.remove("bad");
-  const e = state.emps[+t.dataset.i]; e.prop[+t.dataset.d] = v;
-  save(); const id = t.id; renderA(); const nx = document.getElementById(id); if (nx) nx.focus();
-});
-$("#qA").addEventListener("input", renderA);
-$("#fA").addEventListener("change", renderA);
-$("#btnResetProp").addEventListener("click", () => { state.emps.forEach(e => e.prop = null); save(); renderA(); });
-
-/* ---------- SEMANA ---------- */
-function monday(d) { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
-function iso(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
-function br(d) { return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`; }
-let week = monday(new Date());
-function weekDates() { return DAYS.map((_, i) => { const x = new Date(week); x.setDate(x.getDate() + i); return x; }); }
-function renderS() {
-  const wk = iso(week), ds = weekDates(), L = state.lanc[wk] || {};
-  $("#wDate").value = wk;
-  $("#wLabel").textContent = `${br(ds[0])} a ${br(ds[6])}`;
-  const todayIdx = ds.findIndex(d => iso(d) === iso(new Date()));
-  $("#thS").innerHTML = `<th>Colaborador</th><th class="n">Meta</th>` + ds.map((d, i) => `<th class="d"${i === todayIdx ? ' style="color:var(--accent)"' : ""}>${DAYS[i]}<br>${br(d)}</th>`).join("") + `<th class="n">Trabalhado</th><th style="min-width:170px">Saldo da semana</th>`;
-  const fd = $("#fillDay"), keep = fd.value;
-  fd.innerHTML = ds.map((d, i) => `<option value="${i}">${DAYS[i]} ${br(d)}</option>`).join("");
-  fd.value = keep !== "" ? keep : String(todayIdx >= 0 ? todayIdx : 0);
-  const q = $("#qS").value.trim().toLowerCase();
-  let tMeta = 0, tFeito = 0, nDone = 0, nOver = 0, rows = [];
-  state.emps.forEach((e, idx) => {
-    analyze(e);
-    const meta = sum(e.prop), w = L[e.id] || [], feito = sum(w);
-    tMeta += meta; tFeito += Math.min(feito, meta);
-    const rest = meta - feito;
-    if (rest <= 0 && meta > 0) nDone++;
-    if (rest < 0) nOver++;
-    if (q && !(e.nome + " " + e.mat).toLowerCase().includes(q)) return;
-    const pct = meta ? Math.min(100, feito / meta * 100) : 0;
-    const restTxt = rest > 0 ? `<b>${fmt(rest)}</b> <span>restantes</span>` : rest === 0 ? `<b style="color:var(--ok)">Meta cumprida</b>` : `<b style="color:var(--warn)">+${fmt(-rest)}</b> <span>além da meta</span>`;
-    const cells = DAYS.map((_, d) => {
-      const v = w[d], prev = e.prop[d];
-      return `<td class="d"><input class="h${prev ? "" : " off"}" id="s-${idx}-${d}" data-i="${idx}" data-d="${d}" value="${v != null && v !== "" ? fmt(v, "in") : ""}" placeholder="${prev ? fmt(prev, "in") : "folga"}" aria-label="Horas de ${esc(e.nome)} em ${DAYS[d]}"></td>`;
-    }).join("");
-    rows.push(`<tr><td class="who left"><b>${esc(e.nome)}</b><span>${esc(e.mat)}</span></td><td class="n">${fmt(meta)}</td>${cells}
-      <td class="n">${fmt(feito)}</td>
-      <td class="rest">${restTxt}<div class="meter"><i class="${rest < 0 ? "over" : rest === 0 && meta ? "done" : ""}" style="width:${pct}%"></i></div></td></tr>`);
-  });
-  $("#tbS").innerHTML = rows.join("") || `<tr><td colspan="11" class="hint">Nenhum colaborador encontrado.</td></tr>`;
-  $("#tilesS").innerHTML = tile("Horas restantes da equipe", fmt(Math.max(0, tMeta - tFeito)), `de ${fmt(tMeta)} previstas na semana`) +
-    tile("Concluído", tMeta ? Math.round(tFeito / tMeta * 100) + "%" : "0%") +
-    tile("Bateram a meta", nDone, `de ${state.emps.length} colaboradores`) +
-    tile("Passaram da meta", nOver, nOver ? "conferir horas extras" : "nenhuma hora extra");
-}
-$("#tbS").addEventListener("change", ev => {
-  const t = ev.target; if (!t.matches("input.h")) return;
-  const raw = t.value.trim(), v = raw === "" ? null : parseH(raw);
-  if (v !== null && !horaValida(v)) { t.classList.add("bad"); return; }
-  t.classList.remove("bad");
-  const wk = iso(week), e = state.emps[+t.dataset.i];
-  state.lanc[wk] = state.lanc[wk] || {};
-  const arr = state.lanc[wk][e.id] = state.lanc[wk][e.id] || [null,null,null,null,null,null,null];
-  arr[+t.dataset.d] = v;
-  save(); const id = t.id; renderS(); const nx = document.getElementById(id); if (nx) nx.focus();
-});
-$("#btnFill").addEventListener("click", () => {
-  const d = +$("#fillDay").value, wk = iso(week);
-  state.lanc[wk] = state.lanc[wk] || {};
-  state.emps.forEach(e => {
-    analyze(e);
-    const arr = state.lanc[wk][e.id] = state.lanc[wk][e.id] || [null,null,null,null,null,null,null];
-    if (arr[d] == null && e.prop[d] > 0) arr[d] = e.prop[d];
-  });
-  save(); renderS();
-});
-$("#wPrev").addEventListener("click", () => { week.setDate(week.getDate() - 7); renderS(); });
-$("#wNext").addEventListener("click", () => { week.setDate(week.getDate() + 7); renderS(); });
-$("#wDate").addEventListener("change", ev => { if (ev.target.value) { const [y, m, d] = ev.target.value.split("-").map(Number); week = monday(new Date(y, m - 1, d)); renderS(); } });
-$("#qS").addEventListener("input", renderS);
-
-/* ---------- IMPORTAR ---------- */
-function importRows(rows) {
-  let novos = 0, upd = 0;
-  const skip = [], invalidos = [];
-  rows.forEach((r, i) => {
-    const out = linhaParaColaborador(r, i);
-    if (!out) return;
-    if ("semHoras" in out) { skip.push(out.semHoras); return; }
-    if ("invalido" in out) { invalidos.push(out.invalido); return; }
-    const emp = out.colaborador;
-    const ex = state.emps.findIndex(e => e.mat === emp.mat);
-    if (ex >= 0) { state.emps[ex] = emp; upd++; } else { state.emps.push(emp); novos++; }
-  });
-  return { novos, upd, skip, invalidos };
-}
-function handleFile(file) {
-  const msg = $("#impMsg"); msg.className = "msg"; msg.textContent = "Lendo planilha…";
-  if (typeof XLSX === "undefined") { msg.className = "msg err"; msg.textContent = "Não foi possível carregar o leitor de planilhas. Verifique a conexão e recarregue a página."; return; }
-  const rd = new FileReader();
-  rd.onload = () => {
+  // ---------- estado ----------
+  function carregar(): Estado {
     try {
-      const wb = XLSX.read(new Uint8Array(rd.result), { type: "array" });
-      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "", raw: false });
-      if (state.exemplo) { state.emps = []; state.lanc = {}; state.exemplo = false; }
-      const r = importRows(rows);
-      if (!r.novos && !r.upd) { msg.className = "msg err"; msg.textContent = (r.invalidos.length ? `Horas inválidas em: ${r.invalidos.slice(0, 5).join(", ")}. ` : "") + "Nenhum colaborador encontrado. Confira se a planilha tem a coluna Nome e as horas (por dia ou Jornada semanal)."; render(); return; }
-      save(); render();
-      msg.className = "msg ok";
-      msg.textContent = `${r.novos} colaborador(es) importado(s)${r.upd ? `, ${r.upd} atualizado(s)` : ""}.` + (r.skip.length ? ` Sem horas informadas: ${r.skip.slice(0, 5).join(", ")}${r.skip.length > 5 ? "…" : ""}.` : "") + (r.invalidos.length ? ` Horas inválidas (não importados, confira a planilha): ${r.invalidos.slice(0, 5).join(", ")}${r.invalidos.length > 5 ? "…" : ""}.` : "") + " Veja a aba Análise.";
-    } catch (e) { msg.className = "msg err"; msg.textContent = "Não consegui ler esse arquivo. Salve como .xlsx ou .csv e tente de novo."; }
-  };
-  rd.readAsArrayBuffer(file);
-}
-$("#file").addEventListener("change", ev => { const f = ev.target.files[0]; if (f) handleFile(f); ev.target.value = ""; });
-const drop = $("#drop");
-["dragenter","dragover"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("hover"); }));
-["dragleave","drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("hover"); }));
-drop.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if (f) handleFile(f); });
-$("#goImport").addEventListener("click", () => { location.hash = "importar"; });
-
-$("#btnLimpar").addEventListener("click", () => $("#cfLimpar").classList.add("on"));
-$("#cfNao").addEventListener("click", () => $("#cfLimpar").classList.remove("on"));
-$("#cfSim").addEventListener("click", () => { state = { exemplo: false, emps: [], lanc: {}, etapa: state.etapa, limdia: state.limdia }; save(); $("#cfLimpar").classList.remove("on"); $("#impMsg").textContent = "Dados apagados."; render(); });
-
-$("#restore").addEventListener("change", ev => {
-  const f = ev.target.files[0]; if (!f) return; const rd = new FileReader();
-  rd.onload = () => { try { const s = JSON.parse(rd.result); if (!Array.isArray(s.emps)) throw 0; state = s; save(); render(); $("#impMsg").className = "msg ok"; $("#impMsg").textContent = "Backup restaurado."; } catch (e) { $("#impMsg").className = "msg err"; $("#impMsg").textContent = "Arquivo de backup inválido."; } };
-  rd.readAsText(f); ev.target.value = "";
-});
-
-/* ---------- downloads ---------- */
-let dl = null;
-if (window.claude && typeof window.claude.use === "function") window.claude.use("downloads").then(x => { dl = x; }).catch(() => {});
-async function offer(filename, data) {
-  const msg = $("#impMsg");
-  if (dl) {
-    try { await dl.save({ filename, data }); return; }
-    catch (e) { if (e && e.code === "declined") return; }
+      const s = JSON.parse(localStorage.getItem(CHAVE) ?? 'null');
+      if (s && Array.isArray(s.emps)) return { emps: s.emps, etapa: s.etapa || 42, limdia: s.limdia || 480, exemplo: s.exemplo };
+    } catch {}
+    return { emps: [], etapa: 42, limdia: 480 };
   }
-  try {
-    const blob = data instanceof Blob ? data : new Blob([data]);
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = filename;
-    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-  } catch (e) { msg.className = "msg err"; msg.textContent = "O download não está disponível nesta visualização."; }
-}
-function xlsxFile(sheets) {
-  const wb = XLSX.utils.book_new();
-  sheets.forEach(([name, aoa, widths]) => { const ws = XLSX.utils.aoa_to_sheet(aoa); if (widths) ws["!cols"] = widths.map(w => ({ wch: w })); XLSX.utils.book_append_sheet(wb, ws, name); });
-  return XLSX.write(wb, { bookType: "xlsx", type: "array" });
-}
-const hdec = m => (m ? Math.round(m / 60 * 100) / 100 : 0);
-$("#btnModelo").addEventListener("click", () => {
-  offer("modelo-colaboradores.xlsx", xlsxFile([["Colaboradores", [
-    ["Matrícula","Nome","Cargo","Setor","Seg","Ter","Qua","Qui","Sex","Sáb","Dom"],
-    ["1001","Nome do colaborador","Cargo","Setor","08:00","08:00","08:00","08:00","08:00","04:00",""],
-  ], [11,30,20,16,7,7,7,7,7,7,7]]]));
-});
-$("#btnBackup").addEventListener("click", () => offer(`backup-jornada-${iso(new Date())}.json`, JSON.stringify(state)));
-$("#btnExpA").addEventListener("click", () => {
-  const head = ["Matrícula","Nome","Cargo","Setor","Jornada atual (h)","Nova meta (h)","Redução (h)", ...DAYS.map(d => d + " (h:mm)"),"Total novo (h)","Folgas","Situação","Alertas"];
-  const rows = state.emps.map(e => { const a = analyze(e); return [e.mat, e.nome, e.cargo, e.setor, hdec(a.atual), hdec(a.meta), hdec(a.reduzir), ...e.prop.map(v => (v ? fmt(v, "in") : "folga")), hdec(a.tot), 7 - a.diasNv, a.precisa ? "Ajustar" : "Já conforme", a.alerts.map(x => x[1]).join("; ")]; });
-  offer(`nova-escala-${state.etapa}h.xlsx`, xlsxFile([["Nova escala", [head, ...rows], [11,28,18,14,10,10,10,8,8,8,8,8,8,8,10,8,12,40]]]));
-});
-$("#btnExpS").addEventListener("click", () => {
-  const wk = iso(week), ds = weekDates(), L = state.lanc[wk] || {};
-  const head = ["Matrícula","Nome","Meta (h)", ...ds.map((d, i) => `${DAYS[i]} ${br(d)}`),"Trabalhado (h)","Restante (h)","Além da meta (h)"];
-  const rows = state.emps.map(e => { analyze(e); const w = L[e.id] || [], meta = sum(e.prop), f = sum(w); return [e.mat, e.nome, hdec(meta), ...DAYS.map((_, d) => (w[d] != null ? fmt(w[d], "in") : "")), hdec(f), hdec(Math.max(0, meta - f)), hdec(Math.max(0, f - meta))]; });
-  offer(`semana-${wk}.xlsx`, xlsxFile([["Semana " + br(ds[0]).replace("/", "-"), [head, ...rows], [11,28,9,10,10,10,10,10,10,10,13,12,14]]]));
-});
+  let estado = carregar();
+  let tSalvar: ReturnType<typeof setTimeout>;
+  const salvar = () => {
+    clearTimeout(tSalvar);
+    tSalvar = setTimeout(() => {
+      try { localStorage.setItem(CHAVE, JSON.stringify(estado)); } catch {}
+    }, 200);
+  };
+  const cfg = () => ({ etapa: estado.etapa, limdia: estado.limdia });
+  const proposta = (e: Pessoa) => (e.prop ??= sugerirEscala(e.atual, estado.etapa));
 
-/* ---------- geral ---------- */
-function tile(l, v, s) { return `<div class="tile"><span>${l}</span><b>${v}</b>${s ? `<em>${s}</em>` : ""}</div>`; }
-$("#etapa").value = String(state.etapa || 42);
-$("#limdia").value = String(state.limdia || 480);
-$("#etapa").addEventListener("change", ev => { state.etapa = +ev.target.value; state.emps.forEach(e => e.prop = null); save(); render(); });
-$("#limdia").addEventListener("change", ev => { state.limdia = +ev.target.value; save(); render(); });
-function render() {
-  $("#exBanner").hidden = !state.exemplo;
-  const v = location.hash.slice(1);
-  if (v === "semana") renderS(); else renderA();
-  $("#ctA").textContent = state.emps.length;
-}
-route();
-})();
+  function exemplo(): Pessoa[] {
+    const H = (h: number) => Math.round(h * 60);
+    return ([
+      ['1001', 'Maria Souza', 'Atendente', 'Loja', [8, 8, 8, 8, 8, 4, 0]],
+      ['1002', 'João Lima', 'Estoquista', 'Depósito', [8, 8, 8, 8, 8, 4, 0]],
+      ['1003', 'Ana Ferreira', 'Caixa', 'Loja', [7.33, 7.33, 7.33, 7.33, 7.33, 7.33, 0]],
+      ['1004', 'Carlos Melo', 'Repositor', 'Loja', [0, 8, 8, 8, 8, 8, 4]],
+      ['1005', 'Paula Rocha', 'Auxiliar administrativo', 'Escritório', [8, 8, 8, 8, 8, 0, 0]],
+      ['1006', 'Rafael Dias', 'Vendedor (meio período)', 'Loja', [6, 6, 6, 6, 6, 0, 0]],
+    ] as const).map(([mat, nome, cargo, setor, d]) => ({ id: mat, mat, nome, cargo, setor, atual: d.map(H), prop: null }));
+  }
+
+  // ---------- render ----------
+  const pill = (txt: string, tom: 'ok' | 'warn') =>
+    `<span class="rounded-full px-2.5 py-1 text-xs font-semibold ${tom === 'ok' ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'}">${txt}</span>`;
+
+  function cartao(e: Pessoa, i: number) {
+    const prop = proposta(e);
+    const a = analisar({ atual: e.atual, prop }, cfg());
+    const criticos = a.alerts.filter(([k]) => k === 'crit');
+    const acordo = exigeAcordo(prop, estado.limdia);
+    const alternativa = escalaSemAcordo(e.atual, estado.etapa, estado.limdia);
+    const temAlternativa = acordo && soma(alternativa) > 0 && !e.semAcordo;
+    const sub = [e.cargo, e.setor].filter(Boolean).map(esc).join(' · ');
+
+    const dias = DIAS.map((d, j) => {
+      const v = prop[j];
+      return `<label class="text-center text-xs font-semibold text-cinza">${d}
+        <input data-i="${i}" data-d="${j}" value="${v ? fmt(v, 'in') : ''}" placeholder="folga" inputmode="decimal"
+          aria-label="${d}, nova escala de ${esc(e.nome)}"
+          class="mt-1 w-full rounded-md border px-0.5 py-2 text-center text-sm tabular-nums focus:border-ciano focus:outline-none focus:ring-2 focus:ring-ciano/30 ${v ? 'border-cinza/30 bg-white text-tinta' : 'border-transparent bg-pedra text-cinza'} ${v > estado.limdia ? 'font-semibold text-amber-800' : ''}" />
+      </label>`;
+    }).join('');
+
+    let explicacao = '';
+    if (criticos.length) {
+      explicacao = `<div class="mt-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+        <b>Esta escala não atende à regra:</b> ${criticos.map(([, t]) => esc(t).toLowerCase()).join('; ')}.
+        <button type="button" data-acao="sugerir" data-i="${i}" class="ml-1 font-semibold underline underline-offset-4">Voltar para a sugestão</button></div>`;
+    } else if (acordo) {
+      explicacao = `<div class="mt-4 rounded-md bg-ceu/20 px-4 py-3 text-sm text-navy">
+        Com ${fmt(soma(prop))} em ${a.diasNv} dias, há dia acima de ${fmt(estado.limdia)}: isso exige <b>acordo de compensação</b> ou previsão na convenção coletiva.
+        ${temAlternativa ? `<button type="button" data-acao="sem-acordo" data-i="${i}" class="mt-1 block text-left font-semibold text-ciano-escuro underline underline-offset-4">Ver opção sem acordo: ${resumoSemana(alternativa)}, até ${fmt(estado.limdia)} por dia</button>` : ''}
+      </div>`;
+    } else if (e.semAcordo) {
+      explicacao = `<div class="mt-4 rounded-md bg-pedra px-4 py-3 text-sm text-cinza">
+        Opção sem acordo de compensação: a semana fica com ${fmt(soma(prop))}, abaixo do limite de ${estado.etapa}h.
+        <button type="button" data-acao="sugerir" data-i="${i}" class="ml-1 font-semibold text-ciano-escuro underline underline-offset-4">Voltar para ${estado.etapa}h</button></div>`;
+    }
+
+    const mudanca = a.precisa
+      ? `Hoje: <b>${resumoSemana(e.atual)}</b> · Nova escala: <b>${resumoSemana(prop)}</b>`
+      : `<b>${resumoSemana(e.atual)}</b>: já atende à regra, nada muda.`;
+
+    return `<li class="rounded-lg p-5 ring-1 ring-pedra md:p-6">
+      <div class="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <div><p class="font-semibold text-navy">${esc(e.nome)}</p>${sub ? `<p class="text-sm text-cinza">${sub}</p>` : ''}</div>
+        <div class="flex items-center gap-3">
+          ${a.precisa ? pill('Precisa mudar', 'warn') : pill('Já está na regra', 'ok')}
+          <button type="button" data-acao="remover" data-i="${i}" class="text-sm text-cinza underline underline-offset-4 hover:text-red-700">Remover<span class="sr-only"> ${esc(e.nome)}</span></button>
+        </div>
+      </div>
+      <p class="mt-3 text-[0.95rem]">${mudanca}</p>
+      ${a.precisa || criticos.length ? `<div class="mt-4 grid max-w-xl grid-cols-7 gap-1.5">${dias}</div>` : ''}
+      ${explicacao}
+    </li>`;
+  }
+
+  function render() {
+    const n = estado.emps.length;
+    $('#vazio').hidden = n > 0;
+    $('#com-dados').hidden = n === 0;
+    $('#exemplo-aviso').hidden = !estado.exemplo;
+    $<HTMLSelectElement>('#etapa').value = String(estado.etapa);
+    if (!n) return;
+
+    const analises = estado.emps.map((e) => ({ e, a: analisar({ atual: e.atual, prop: proposta(e) }, cfg()) }));
+    const mudam = analises.filter((x) => x.a.precisa).length;
+    const reduzir = analises.reduce((s, x) => s + x.a.reduzir, 0);
+    $('#resumo').textContent = mudam
+      ? `${mudam} de ${n} ${n === 1 ? 'colaborador precisa' : 'colaboradores precisam'} mudar de escala.`
+      : `${n === 1 ? 'O colaborador já atende' : `Os ${n} colaboradores já atendem`} à regra de ${estado.etapa}h.`;
+    $('#resumo-sub').textContent = reduzir ? `Juntos, são ${fmt(reduzir)} de trabalho a menos por semana. Ajuste as horas de qualquer dia se quiser.` : '';
+
+    $('#lista').innerHTML = estado.emps.map(cartao).join('');
+    $<HTMLAnchorElement>('#btn-whatsapp').href = whatsappLink(mensagem(analises.map((x) => x.a), mudam));
+  }
+
+  function mensagem(analises: ReturnType<typeof analisar>[], mudam: number) {
+    const acordo = estado.emps.filter((e) => exigeAcordo(proposta(e), estado.limdia)).length;
+    return [
+      'Olá! Usei o controle de jornada do site da G2A.',
+      `Regra: até ${estado.etapa}h e ${folgasMinimas(estado.etapa)} folga${folgasMinimas(estado.etapa) > 1 ? 's' : ''} por semana.`,
+      `Equipe: ${analises.length} ${analises.length === 1 ? 'colaborador' : 'colaboradores'}. ` +
+        `Precisam mudar de escala: ${mudam}.` +
+        (acordo ? ` Com dias acima de ${fmt(estado.limdia)} (acordo de compensação): ${acordo}.` : ''),
+      'Quero ajuda para adaptar a escala.',
+    ].join('\n');
+  }
+
+  // ---------- adicionar ----------
+  const form = $<HTMLFormElement>('#form-add');
+  const erro = $('#add-erro');
+  form.addEventListener('click', (ev) => {
+    const b = (ev.target as HTMLElement).closest<HTMLButtonElement>('[data-modelo]');
+    if (!b) return;
+    MODELOS_SEMANA[+b.dataset.modelo!].dias.forEach((v, j) => {
+      (form.elements.namedItem(`d${j}`) as HTMLInputElement).value = v ? fmt(v, 'in') : '';
+    });
+  });
+  form.addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const nome = (form.elements.namedItem('nome') as HTMLInputElement).value.trim();
+    const atual: Escala = DIAS.map((_, j) => parseH((form.elements.namedItem(`d${j}`) as HTMLInputElement).value));
+    const msg = !nome
+      ? 'Informe o nome do colaborador.'
+      : atual.some((v) => !horaValida(v))
+        ? 'Alguma hora não foi entendida. Use 8, 8:30 ou 8h30, até 24h por dia.'
+        : soma(atual) === 0
+          ? 'Informe as horas de pelo menos um dia, ou escolha uma das semanas prontas.'
+          : '';
+    erro.textContent = msg;
+    erro.hidden = !msg;
+    if (msg) return;
+    if (estado.exemplo) { estado.emps = []; estado.exemplo = false; }
+    const id = `M${Date.now().toString(36)}`;
+    estado.emps.push({ id, mat: id, nome, cargo: '', setor: '', atual, prop: null });
+    salvar();
+    render();
+    form.reset();
+    (form.elements.namedItem('nome') as HTMLInputElement).focus();
+  });
+
+  // ---------- editar / ações nos cartões ----------
+  const lista = $('#lista');
+  lista.addEventListener('change', (ev) => {
+    const t = ev.target as HTMLInputElement;
+    if (!t.dataset.d) return;
+    const v = parseH(t.value);
+    if (!horaValida(v)) { t.setCustomValidity('Hora inválida'); t.reportValidity(); return; }
+    t.setCustomValidity('');
+    const e = estado.emps[+t.dataset.i!];
+    proposta(e)[+t.dataset.d] = v;
+    e.semAcordo = false;
+    salvar();
+    const foco = `[data-i="${t.dataset.i}"][data-d="${t.dataset.d}"]`;
+    render();
+    document.querySelector<HTMLInputElement>(foco)?.focus();
+  });
+  lista.addEventListener('click', (ev) => {
+    const b = (ev.target as HTMLElement).closest<HTMLButtonElement>('[data-acao]');
+    if (!b) return;
+    const i = +b.dataset.i!;
+    const e = estado.emps[i];
+    if (b.dataset.acao === 'remover') estado.emps.splice(i, 1);
+    if (b.dataset.acao === 'sem-acordo') { e.prop = escalaSemAcordo(e.atual, estado.etapa, estado.limdia); e.semAcordo = true; }
+    if (b.dataset.acao === 'sugerir') { e.prop = sugerirEscala(e.atual, estado.etapa); e.semAcordo = false; }
+    if (!estado.emps.length) estado.exemplo = false;
+    salvar();
+    render();
+  });
+
+  $<HTMLSelectElement>('#etapa').addEventListener('change', (ev) => {
+    estado.etapa = +(ev.target as HTMLSelectElement).value;
+    estado.emps.forEach((e) => { e.prop = null; e.semAcordo = false; });
+    salvar();
+    render();
+  });
+
+  $('#btn-exemplo').addEventListener('click', () => { estado.emps = exemplo(); estado.exemplo = true; salvar(); render(); });
+  $('#btn-limpar-exemplo').addEventListener('click', () => { estado.emps = []; estado.exemplo = false; salvar(); render(); });
+  $('#btn-apagar').addEventListener('click', () => { $('#confirma-apagar').hidden = false; });
+  $('#btn-apagar-nao').addEventListener('click', () => { $('#confirma-apagar').hidden = true; });
+  $('#btn-apagar-sim').addEventListener('click', () => {
+    estado.emps = []; estado.exemplo = false; $('#confirma-apagar').hidden = true; salvar(); render();
+  });
+
+  // ---------- planilha (SheetJS só carrega quando for usado) ----------
+  declare const XLSX: any;
+  let xlsxCarregando: Promise<void> | null = null;
+  function carregarXlsx() {
+    if (typeof XLSX !== 'undefined') return Promise.resolve();
+    return (xlsxCarregando ??= new Promise<void>((ok, falha) => {
+      const s = document.createElement('script');
+      s.src = '/vendor/xlsx.full.min.js';
+      s.onload = () => ok();
+      s.onerror = () => { xlsxCarregando = null; falha(new Error('xlsx')); };
+      document.head.append(s);
+    }));
+  }
+  function baixar(nome: string, dados: ArrayBuffer) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([dados]));
+    a.download = nome;
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  function planilha(nome: string, linhas: unknown[][], larguras: number[]) {
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(linhas);
+    ws['!cols'] = larguras.map((wch) => ({ wch }));
+    XLSX.utils.book_append_sheet(wb, ws, nome);
+    return XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  }
+
+  const impMsg = $('#imp-msg');
+  const avisar = (txt: string, tipo: 'ok' | 'erro' | '' = '') => {
+    impMsg.textContent = txt;
+    impMsg.className = `mt-3 text-sm ${tipo === 'erro' ? 'font-medium text-red-700' : tipo === 'ok' ? 'font-medium text-emerald-800' : 'text-cinza'}`;
+  };
+
+  $<HTMLInputElement>('#arquivo').addEventListener('change', async (ev) => {
+    const input = ev.target as HTMLInputElement;
+    const arq = input.files?.[0];
+    input.value = '';
+    if (!arq) return;
+    avisar('Lendo a planilha…');
+    try {
+      await carregarXlsx();
+      const wb = XLSX.read(new Uint8Array(await arq.arrayBuffer()), { type: 'array' });
+      // raw:false: read cells as displayed, so Excel durations like 44:00 are not taken as days.
+      const linhas = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '', raw: false });
+      let novos = 0, atualizados = 0;
+      const semHoras: string[] = [], invalidos: string[] = [];
+      if (estado.exemplo) { estado.emps = []; estado.exemplo = false; }
+      linhas.forEach((r: Record<string, unknown>, i: number) => {
+        const out = linhaParaColaborador(r, i);
+        if (!out) return;
+        if ('semHoras' in out) return void semHoras.push(out.semHoras);
+        if ('invalido' in out) return void invalidos.push(out.invalido);
+        const ex = estado.emps.findIndex((e) => e.mat === out.colaborador.mat);
+        if (ex >= 0) { estado.emps[ex] = out.colaborador; atualizados++; } else { estado.emps.push(out.colaborador); novos++; }
+      });
+      salvar();
+      render();
+      const lista5 = (xs: string[]) => xs.slice(0, 5).join(', ') + (xs.length > 5 ? '…' : '');
+      const partes = [
+        novos || atualizados ? `${novos} colaborador(es) adicionado(s)${atualizados ? `, ${atualizados} atualizado(s)` : ''}.` : 'Nenhum colaborador encontrado: confira se há a coluna Nome e as horas.',
+        semHoras.length ? `Sem horas: ${lista5(semHoras)}.` : '',
+        invalidos.length ? `Horas que não entendemos (confira na planilha): ${lista5(invalidos)}.` : '',
+      ];
+      avisar(partes.filter(Boolean).join(' '), novos || atualizados ? 'ok' : 'erro');
+    } catch {
+      avisar('Não conseguimos ler esse arquivo. Salve como .xlsx ou .csv e tente de novo.', 'erro');
+    }
+  });
+
+  $('#btn-modelo').addEventListener('click', async () => {
+    try {
+      await carregarXlsx();
+      baixar('modelo-colaboradores.xlsx', planilha('Colaboradores', [
+        ['Matrícula', 'Nome', 'Cargo', 'Setor', ...DIAS],
+        ['1001', 'Nome do colaborador', 'Cargo', 'Setor', '08:00', '08:00', '08:00', '08:00', '08:00', '04:00', ''],
+      ], [11, 30, 20, 16, 7, 7, 7, 7, 7, 7, 7]));
+    } catch { avisar('Não foi possível gerar o modelo agora. Verifique a conexão.', 'erro'); }
+  });
+
+  $('#btn-exportar').addEventListener('click', async () => {
+    try {
+      await carregarXlsx();
+      const h = (m: number) => (m ? Math.round((m / 60) * 100) / 100 : 0);
+      const linhas = estado.emps.map((e) => {
+        const prop = proposta(e);
+        const a = analisar({ atual: e.atual, prop }, cfg());
+        return [e.mat, e.nome, e.cargo, e.setor, h(a.atual), h(a.tot), ...prop.map((v) => (v ? fmt(v, 'in') : 'folga')),
+          a.precisa ? 'Mudar' : 'Já atende', exigeAcordo(prop, estado.limdia) ? 'Sim' : 'Não'];
+      });
+      baixar(`nova-escala-${estado.etapa}h.xlsx`, planilha('Nova escala', [
+        ['Matrícula', 'Nome', 'Cargo', 'Setor', 'Horas hoje', 'Horas na nova escala', ...DIAS, 'Situação', 'Exige acordo de compensação'],
+        ...linhas,
+      ], [11, 28, 18, 14, 11, 18, 7, 7, 7, 7, 7, 7, 7, 11, 26]));
+    } catch { alert('Não foi possível gerar a planilha agora. Verifique a conexão e tente de novo.'); }
+  });
+
+  render();
 </script>
-
-<style is:global>
-.pj{
-  --ink:#1a1f36; --muted:#5a6178; --line:#d7dee4; --bg:transparent; --surface:#ffffff; --sunk:#e9ecf2;
-  --accent:#0a86a6; --accent-soft:#dff3f9;
-  --ok:#1e7a3c; --ok-soft:#dcf1e2; --warn:#a15c00; --warn-soft:#fdeccc; --crit:#b3261e; --crit-soft:#fadcd9;
-  --f-body:inherit;
-  --f-num:inherit;
-  
-}
-.pj *{box-sizing:border-box}
-.pj{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body)}
-.pj .num,.pj td.n,.pj .tile b,.pj input.h{font-family:var(--f-num);font-variant-numeric:tabular-nums}
-.pj .wrap{max-width:1240px;margin:0 auto;padding:0 20px 48px}
-.pj header.top{background:var(--surface);border-bottom:1px solid var(--line)}
-.pj .top .wrap{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:center;padding-top:16px;padding-bottom:16px}
-.pj h1{display:none;font-size:20px;margin:0;letter-spacing:-.01em;text-wrap:balance}
-.pj h1 small{display:block;font-size:13px;font-weight:400;color:var(--muted)}
-.pj .rule{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-left:auto}
-.pj label.f{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted);font-weight:600}
-.pj select,.pj input[type=text],.pj input[type=date],.pj input[type=search]{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
-.pj select:focus-visible,.pj input:focus-visible,.pj button:focus-visible,.pj a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.pj nav.tabs{display:flex;gap:4px;margin:20px 0 16px;border-bottom:1px solid var(--line);overflow-x:auto}
-.pj nav.tabs a{padding:10px 16px;color:var(--muted);text-decoration:none;font-weight:600;border-bottom:3px solid transparent;white-space:nowrap}
-.pj nav.tabs a[aria-current="page"]{color:var(--ink);border-color:var(--accent)}
-.pj nav.tabs a .ct{font-family:var(--f-num);font-size:12px;background:var(--sunk);border-radius:10px;padding:1px 7px;margin-left:6px}
-.pj .banner{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:var(--warn-soft);color:var(--ink);border:1px solid var(--line);border-left:4px solid var(--warn);padding:10px 14px;border-radius:6px;margin-bottom:16px;font-size:14px}
-.pj .banner b{color:var(--warn)}
-.pj button{font:inherit;font-weight:600;cursor:pointer;border-radius:6px;padding:7px 14px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
-.pj button:hover{border-color:var(--accent)}
-.pj button.pri{background:var(--accent);border-color:var(--accent);color:#fff}
-.pj button.sm{padding:4px 10px;font-size:13px}
-.pj button.danger{color:var(--crit)}
-.pj .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:16px}
-.pj .tile{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
-.pj .tile span{display:block;font-size:12px;color:var(--muted);font-weight:600}
-.pj .tile b{font-size:24px;font-weight:600}
-.pj .tile em{font-style:normal;font-size:12px;color:var(--muted)}
-.pj .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
-.pj .bar .grow{flex:1}
-.pj .card{background:var(--surface);border:1px solid var(--line);border-radius:8px}
-.pj .scroll{overflow-x:auto}
-.pj table{border-collapse:collapse;width:100%;font-size:14px}
-.pj th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);background:var(--sunk);position:sticky;top:0;white-space:nowrap}
-.pj td{padding:8px;border-bottom:1px solid var(--line);vertical-align:middle}
-.pj tr:last-child td{border-bottom:0}
-.pj td.n,.pj th.n{text-align:right;white-space:nowrap}
-.pj th.d,.pj td.d{text-align:center;width:66px}
-.pj .who b{display:block;font-weight:600}
-.pj .who span{font-size:12px;color:var(--muted)}
-.pj input.h{width:60px;text-align:center;padding:5px 2px;border:1px solid var(--line);border-radius:5px;background:var(--surface);color:var(--ink);font-size:13px}
-.pj input.h.off{background:var(--sunk);color:var(--muted)}
-.pj input.h.bad{border-color:var(--crit);background:var(--crit-soft)}
-.pj .pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:12px;white-space:nowrap;margin:1px 2px 1px 0}
-.pj .p-ok{background:var(--ok-soft);color:var(--ok)}
-.pj .p-warn{background:var(--warn-soft);color:var(--warn)}
-.pj .p-crit{background:var(--crit-soft);color:var(--crit)}
-.pj .p-info{background:var(--accent-soft);color:var(--accent)}
-.pj .left{min-width:170px}
-.pj .meter{height:8px;background:var(--sunk);border-radius:4px;overflow:hidden;margin-top:5px}
-.pj .meter i{display:block;height:100%;background:var(--accent);border-radius:4px}
-.pj .meter i.done{background:var(--ok)}
-.pj .meter i.over{background:var(--warn)}
-.pj .rest b{font-family:var(--f-num);font-size:15px}
-.pj .rest span{font-size:12px;color:var(--muted)}
-.pj .drop{border:2px dashed var(--line);border-radius:10px;padding:32px 20px;text-align:center;background:var(--surface)}
-.pj .drop.hover{border-color:var(--accent);background:var(--accent-soft)}
-.pj .drop p{margin:6px 0;color:var(--muted)}
-.pj .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-top:16px}
-.pj .cols .card{padding:16px 18px}
-.pj .cols h3{margin:0 0 8px;font-size:15px}
-.pj .cols ul{margin:0;padding-left:18px;color:var(--muted);font-size:14px}
-.pj code{font-family:var(--f-num);font-size:13px;background:var(--sunk);padding:1px 5px;border-radius:4px}
-.pj .msg{font-size:14px;margin-top:10px;min-height:20px}
-.pj .msg.err{color:var(--crit)}
-.pj .msg.ok{color:var(--ok)}
-.pj .hint{font-size:13px;color:var(--muted)}
-.pj .confirm{display:none;gap:8px;align-items:center;font-size:14px}
-.pj .confirm.on{display:inline-flex}
-.pj [hidden]{display:none!important}
-.pj footer{margin-top:24px;font-size:12.5px;color:var(--muted);max-width:80ch}
-@media (max-width:640px){.pj .rule{margin-left:0}
-.pj .wrap{padding:0 16px 40px}
-}
-@media (prefers-reduced-motion:no-preference){.pj .meter i{transition:width .25s ease}
-}
-
-
-.pj ul{list-style:disc}
-.pj button.pri{background:#1b2763;border-color:#1b2763}
-.pj button.pri:hover{background:#131c4a}
-.pj .num,.pj td.n,.pj .tile b,.pj input.h{font-variant-numeric:tabular-nums}
-.pj th{text-transform:none;letter-spacing:0;font-size:13px}
-.pj .pj-barra{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:end;padding:16px 18px;background:#fff;border:1px solid var(--line);border-radius:8px}
-.pj .pj-barra p{margin:0;max-width:52ch;font-size:14px;color:var(--muted)}
-.pj{font-size:15px;line-height:1.5}
-.pj .wrap{max-width:76rem;padding:28px 2rem 56px}
-@media (max-width:48rem){.pj .wrap{padding:24px 1.25rem 40px}}
-.pj .tile em{margin-left:6px}
-.pj td .pill{white-space:normal}
-
-</style>
