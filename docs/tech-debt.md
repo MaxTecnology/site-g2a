@@ -45,3 +45,10 @@ O token do site lê os metadados de qualquer arquivo (só os campos necessários
 ## 8. [P3] Script do Controle de jornada ainda monolítico
 
 As regras saíram para `src/lib/jornada.ts` (com testes), mas a renderização continua em template strings com `innerHTML` (escapadas por `esc`). Uma futura reescrita em componentes deixaria isso mais seguro de manter.
+
+## 9. [P3] Identificadores e comentários em português
+
+O padrão do time é código, variáveis, funções e comentários inline em inglês. O projeto nasceu em português (`listarAvisos`, `servicos`, `site.endereco`, componentes `Cabecalho`, `ListaAvisos`...), e o código novo seguiu o padrão existente para não misturar os dois idiomas.
+
+- Fazer a troca num PR próprio e mecânico (renomear símbolos, arquivos de componentes e comentários), sem mudança de comportamento, com os testes como rede de segurança.
+- Textos exibidos ao usuário continuam em português.

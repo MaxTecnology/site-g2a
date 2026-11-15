@@ -130,6 +130,12 @@ describe('securityHeaders', () => {
     expect(csp).toContain("object-src 'none'");
     expect(csp).toContain("base-uri 'self'");
   });
+  it('can omit the CSP for non-HTML files but keeps the other headers', () => {
+    const h = securityHeaders({ https: true, csp: false });
+    expect(h['Content-Security-Policy']).toBeUndefined();
+    expect(h['X-Content-Type-Options']).toBe('nosniff');
+    expect(h['Strict-Transport-Security']).toBeDefined();
+  });
   it('allows no third-party scripts, styles, fonts, connections or form targets', () => {
     const csp: string = securityHeaders({ https: false })['Content-Security-Policy'];
     const diretiva = (nome: string) => csp.split('; ').find((d) => d.startsWith(nome + ' '));

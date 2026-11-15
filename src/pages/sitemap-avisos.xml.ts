@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { listarAvisos } from '../lib/directus';
+import { listarSlugsAvisos } from '../lib/directus';
 
 export const prerender = false;
 
@@ -9,7 +9,14 @@ const xmlEsc = (s: string) => s.replace(/[<>&'"]/g, (c) => `&#${c.charCodeAt(0)}
 
 export const GET: APIRoute = async ({ site }) => {
   const base = site ?? new URL('https://g2asolucoescontabeis.com.br');
-  const { avisos, ok } = await listarAvisos({ limite: 1000 });
+  const { avisos, ok } = await listarSlugsAvisos();
+  // Without Directus the sitemap would look like every notice was removed: answer 503 instead.
+  if (!ok) {
+    return new Response('Sitemap temporariamente indisponível', {
+      status: 503,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store', 'Retry-After': '600' },
+    });
+  }
 
   const urls = [
     { loc: new URL('/', base).href, lastmod: avisos[0]?.publicado_em },
@@ -24,8 +31,7 @@ export const GET: APIRoute = async ({ site }) => {
   return new Response(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${corpo}</urlset>`, {
     headers: {
       'Content-Type': 'application/xml; charset=utf-8',
-      // Don't let a Directus outage get cached as an almost empty sitemap.
-      'Cache-Control': ok ? 'public, max-age=3600' : 'no-store',
+      'Cache-Control': 'public, max-age=3600',
     },
   });
 };

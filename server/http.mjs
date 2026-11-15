@@ -111,19 +111,19 @@ export const CSP = [
 ].join('; ');
 
 /**
- * @param {{ https: boolean }} ctx
+ * @param {{ https: boolean, csp?: boolean }} ctx
  * @returns {Record<string, string>}
  */
-export function securityHeaders({ https }) {
+export function securityHeaders({ https, csp = true }) {
   /** @type {Record<string, string>} */
   const h = {
-    'Content-Security-Policy': CSP,
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'SAMEORIGIN',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()',
     'Cross-Origin-Opener-Policy': 'same-origin',
   };
+  if (csp) h['Content-Security-Policy'] = CSP;
   // HSTS only makes sense when the visitor actually arrived over TLS (terminated at Traefik).
   if (https) h['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains';
   return h;

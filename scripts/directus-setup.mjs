@@ -226,7 +226,8 @@ const policies = await api('GET', '/policies?limit=-1&fields=id,name');
 async function garantirPermissao(policy, collection, action, restrita) {
   const atuais = await api('GET', `/permissions?filter[policy][_eq]=${policy}&filter[collection][_eq]=${collection}&filter[action][_eq]=${action}`);
   if (atuais.length) {
-    if (restrita) await api('PATCH', `/permissions/${atuais[0].id}`, restrita);
+    // Directus merges permissions: one leftover wide rule would undo the restriction.
+    if (restrita) for (const p of atuais) await api('PATCH', `/permissions/${p.id}`, restrita);
     return;
   }
   await api('POST', '/permissions', { policy, collection, action, fields: ['*'], ...restrita });

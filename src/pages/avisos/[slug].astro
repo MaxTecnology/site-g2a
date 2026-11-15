@@ -7,9 +7,12 @@ import { sanitizarConteudo } from '../../lib/sanitize';
 
 export const prerender = false;
 
-const aviso = await buscarAviso(Astro.params.slug ?? '');
-if (!aviso) Astro.response.status = 404;
+const { aviso, ok } = await buscarAviso(Astro.params.slug ?? '');
+// Directus down -> 503 (temporary, crawlers keep the page); only a real miss is a 404.
+if (!ok) Astro.response.status = 503;
+else if (!aviso) Astro.response.status = 404;
 Astro.response.headers.set('Cache-Control', aviso ? 'public, max-age=60, stale-while-revalidate=600' : 'no-store');
+if (!ok) Astro.response.headers.set('Retry-After', '120');
 
 const arquivos = (aviso?.anexos ?? []).map((a) => a.directus_files_id).filter(Boolean);
 const pdfs = arquivos.filter(ehPdf);
@@ -20,7 +23,16 @@ const imagemOg = capa ? urlArquivo(capa, { largura: 1200 }) : undefined;
 const conteudo = sanitizarConteudo(aviso?.conteudo);
 ---
 
-{!aviso && (
+{!ok && (
+  <Base titulo="Avisos indisponíveis" descricao="Os avisos estão temporariamente indisponíveis.">
+    <section class="container-g2a py-24 md:py-32">
+      <h1 class="titulo max-w-2xl text-4xl text-navy md:text-5xl">Não conseguimos carregar este aviso agora</h1>
+      <p class="mt-6 max-w-xl text-cinza">Tente de novo em alguns minutos. Se for urgente, fale com o escritório pelo WhatsApp.</p>
+      <p class="mt-6"><a href={whatsappLink('Olá! Não consegui abrir um aviso no site.')} target="_blank" rel="noopener" class="font-semibold text-ciano-escuro underline underline-offset-4">Falar no WhatsApp</a></p>
+    </section>
+  </Base>
+)}
+{ok && !aviso && (
   <Base titulo="Aviso não encontrado" descricao="Este aviso não existe ou foi retirado do ar.">
     <section class="container-g2a py-24 md:py-32">
       <h1 class="titulo max-w-2xl text-4xl text-navy md:text-5xl">Este aviso não existe ou foi retirado do ar</h1>

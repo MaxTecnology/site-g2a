@@ -39,12 +39,14 @@ const server = http.createServer((req, res) => {
   }
 
   const https = req.headers['x-forwarded-proto'] === 'https';
-  for (const [k, v] of Object.entries(securityHeaders({ https }))) res.setHeader(k, v);
+  // Notice files (PDF, images) get no CSP: a document CSP can block the browser's PDF viewer.
+  const arquivo = path.startsWith('/arquivos/');
+  for (const [k, v] of Object.entries(securityHeaders({ https, csp: !arquivo }))) res.setHeader(k, v);
 
   const ip = chaveIp(clientIp(req, TRUSTED_PROXY_HOPS));
   const g = geral.hit(ip);
   if (!g.allowed) return bloquear(res, g.retryAfterSec);
-  if (path.startsWith('/arquivos/')) {
+  if (arquivo) {
     const a = arquivos.hit(ip);
     if (!a.allowed) return bloquear(res, a.retryAfterSec);
   }
