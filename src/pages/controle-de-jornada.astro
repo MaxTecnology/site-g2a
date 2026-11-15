@@ -126,9 +126,18 @@ const campoDia =
     <div id="base-legal" class="mt-16 max-w-[80ch] scroll-mt-28 border-t border-pedra pt-8 text-sm text-cinza">
       <h2 class="font-semibold text-navy">Regras usadas</h2>
       <p class="mt-2">
-        EC nº 141/2026 (promulgada em 16/10/2026): até 15/12/2026 vale o limite de 44h semanais. De 16/12/2026 em diante, 42h e
-        2 dias de descanso por semana. A partir de 16/12/2027, 40h. Nenhum dia pode passar de 10h, e dia acima de 8h exige
-        acordo de compensação ou previsão em convenção coletiva (CLT, art. 59).
+        Até 15/12/2026 vale o limite de 44h semanais. De 16/12/2026 em diante, 42h e 2 dias de descanso por semana. A partir
+        de 16/12/2027, 40h. Na etapa de 42h, se não houver acordo ou convenção coletiva até 15/12/2026, a empresa pode
+        distribuir as 42h em 5 dias de até 8h24, sem hora extra pelos 24 minutos, até 15/12/2027. Fora disso, dia acima de 8h
+        exige acordo de compensação ou previsão em convenção coletiva, e nenhum dia pode passar de 10h (CLT, arts. 58 e 59).
+      </p>
+      <p class="mt-2">
+        Cláusulas de acordos e convenções incompatíveis com a nova regra perdem a validade a partir de 16/12/2026, e há 90 dias
+        para renegociar. Acordos e convenções podem definir outras formas de compensar as folgas.
+      </p>
+      <p class="mt-2">
+        Fonte: decisão liminar do ministro Flávio Dino (STF, ADIs 8.041 e 8.042, 12/11/2026), sujeita ao referendo do
+        plenário. Regras atualizadas em 15/11/2026.
       </p>
       <p class="mt-2">
         A ferramenta faz uma sugestão inicial. Horas extras habituais, escalas especiais e regras da convenção coletiva da sua
@@ -141,12 +150,12 @@ const campoDia =
 <script>
   import {
     DIAS, MODELOS_SEMANA, fmt, parseH, soma, horaValida, folgasMinimas, sugerirEscala, escalaSemAcordo,
-    exigeAcordo, analisar, linhaParaColaborador, resumoSemana, esc, type Colaborador, type Escala,
+    exigeAcordo, analisar, limiteDiarioSemAcordo, linhaParaColaborador, resumoSemana, esc, type Colaborador, type Escala,
   } from '../lib/jornada';
   import { whatsappLink } from '../data/site';
 
   type Pessoa = Colaborador & { semAcordo?: boolean };
-  type Estado = { emps: Pessoa[]; etapa: number; limdia: number; exemplo?: boolean };
+  type Estado = { emps: Pessoa[]; etapa: number; exemplo?: boolean };
 
   const CHAVE = 'planejador-jornada-5x2.v1';
   const $ = <T extends HTMLElement>(s: string) => document.querySelector<T>(s)!;
@@ -155,9 +164,9 @@ const campoDia =
   function carregar(): Estado {
     try {
       const s = JSON.parse(localStorage.getItem(CHAVE) ?? 'null');
-      if (s && Array.isArray(s.emps)) return { emps: s.emps, etapa: s.etapa || 42, limdia: s.limdia || 480, exemplo: s.exemplo };
+      if (s && Array.isArray(s.emps)) return { emps: s.emps, etapa: s.etapa || 42, exemplo: s.exemplo };
     } catch {}
-    return { emps: [], etapa: 42, limdia: 480 };
+    return { emps: [], etapa: 42 };
   }
   let estado = carregar();
   let tSalvar: ReturnType<typeof setTimeout>;
@@ -167,7 +176,9 @@ const campoDia =
       try { localStorage.setItem(CHAVE, JSON.stringify(estado)); } catch {}
     }, 200);
   };
-  const cfg = () => ({ etapa: estado.etapa, limdia: estado.limdia });
+  // Daily limit without agreement follows the selected stage (8h24 in the 42h transition, 8h otherwise).
+  const limdia = () => limiteDiarioSemAcordo(estado.etapa);
+  const cfg = () => ({ etapa: estado.etapa, limdia: limdia() });
   const proposta = (e: Pessoa) => (e.prop ??= sugerirEscala(e.atual, estado.etapa));
 
   function exemplo(): Pessoa[] {
@@ -190,9 +201,10 @@ const campoDia =
     const prop = proposta(e);
     const a = analisar({ atual: e.atual, prop }, cfg());
     const criticos = a.alerts.filter(([k]) => k === 'crit');
-    const acordo = exigeAcordo(prop, estado.limdia);
-    const alternativa = escalaSemAcordo(e.atual, estado.etapa, estado.limdia);
+    const acordo = exigeAcordo(prop, limdia());
+    const alternativa = escalaSemAcordo(e.atual, estado.etapa, limdia());
     const temAlternativa = acordo && soma(alternativa) > 0 && !e.semAcordo;
+    const transicao = !acordo && estado.etapa === 42 && Math.max(...prop) > 480;
     const sub = [e.cargo, e.setor].filter(Boolean).map(esc).join(' · ');
 
     const dias = DIAS.map((d, j) => {
@@ -200,7 +212,7 @@ const campoDia =
       return `<label class="text-center text-xs font-semibold text-cinza">${d}
         <input data-i="${i}" data-d="${j}" value="${v ? fmt(v, 'in') : ''}" placeholder="folga" inputmode="decimal"
           aria-label="${d}, nova escala de ${esc(e.nome)}"
-          class="mt-1 w-full rounded-md border px-0.5 py-2 text-center text-sm tabular-nums focus:border-ciano focus:outline-none focus:ring-2 focus:ring-ciano/30 ${v ? 'border-cinza/30 bg-white text-tinta' : 'border-transparent bg-pedra text-cinza'} ${v > estado.limdia ? 'font-semibold text-amber-800' : ''}" />
+          class="mt-1 w-full rounded-md border px-0.5 py-2 text-center text-sm tabular-nums focus:border-ciano focus:outline-none focus:ring-2 focus:ring-ciano/30 ${v ? 'border-cinza/30 bg-white text-tinta' : 'border-transparent bg-pedra text-cinza'} ${v > limdia() ? 'font-semibold text-amber-800' : ''}" />
       </label>`;
     }).join('');
 
@@ -211,9 +223,13 @@ const campoDia =
         <button type="button" data-acao="sugerir" data-i="${i}" class="ml-1 font-semibold underline underline-offset-4">Voltar para a sugestão</button></div>`;
     } else if (acordo) {
       explicacao = `<div class="mt-4 rounded-md bg-ceu/20 px-4 py-3 text-sm text-navy">
-        Com ${fmt(soma(prop))} em ${a.diasNv} dias, há dia acima de ${fmt(estado.limdia)}: isso exige <b>acordo de compensação</b> ou previsão na convenção coletiva.
-        ${temAlternativa ? `<button type="button" data-acao="sem-acordo" data-i="${i}" class="mt-1 block text-left font-semibold text-ciano-escuro underline underline-offset-4">Ver opção sem acordo: ${resumoSemana(alternativa)}, até ${fmt(estado.limdia)} por dia</button>` : ''}
+        Com ${fmt(soma(prop))} em ${a.diasNv} dias, há dia acima de ${fmt(limdia())}: isso exige <b>acordo de compensação</b> ou previsão na convenção coletiva.
+        ${temAlternativa ? `<button type="button" data-acao="sem-acordo" data-i="${i}" class="mt-1 block text-left font-semibold text-ciano-escuro underline underline-offset-4">Ver opção sem acordo: ${resumoSemana(alternativa)}, até ${fmt(limdia())} por dia</button>` : ''}
       </div>`;
+    } else if (transicao) {
+      explicacao = `<div class="mt-4 rounded-md bg-pedra px-4 py-3 text-sm text-cinza">
+        Dias de até 8h24 são permitidos na transição para 42h, sem acordo e sem hora extra pelos 24 minutos, até 15/12/2027
+        (liminar do STF). Se a convenção coletiva da categoria trouxer outra regra, vale a convenção.</div>`;
     } else if (e.semAcordo) {
       explicacao = `<div class="mt-4 rounded-md bg-pedra px-4 py-3 text-sm text-cinza">
         Opção sem acordo de compensação: a semana fica com ${fmt(soma(prop))}, abaixo do limite de ${estado.etapa}h.
@@ -259,13 +275,13 @@ const campoDia =
   }
 
   function mensagem(analises: ReturnType<typeof analisar>[], mudam: number) {
-    const acordo = estado.emps.filter((e) => exigeAcordo(proposta(e), estado.limdia)).length;
+    const acordo = estado.emps.filter((e) => exigeAcordo(proposta(e), limdia())).length;
     return [
       'Olá! Usei o controle de jornada do site da G2A.',
       `Regra: até ${estado.etapa}h e ${folgasMinimas(estado.etapa)} folga${folgasMinimas(estado.etapa) > 1 ? 's' : ''} por semana.`,
       `Equipe: ${analises.length} ${analises.length === 1 ? 'colaborador' : 'colaboradores'}. ` +
         `Precisam mudar de escala: ${mudam}.` +
-        (acordo ? ` Com dias acima de ${fmt(estado.limdia)} (acordo de compensação): ${acordo}.` : ''),
+        (acordo ? ` Com dias acima de ${fmt(limdia())} (acordo de compensação): ${acordo}.` : ''),
       'Quero ajuda para adaptar a escala.',
     ].join('\n');
   }
@@ -325,7 +341,7 @@ const campoDia =
     const i = +b.dataset.i!;
     const e = estado.emps[i];
     if (b.dataset.acao === 'remover') estado.emps.splice(i, 1);
-    if (b.dataset.acao === 'sem-acordo') { e.prop = escalaSemAcordo(e.atual, estado.etapa, estado.limdia); e.semAcordo = true; }
+    if (b.dataset.acao === 'sem-acordo') { e.prop = escalaSemAcordo(e.atual, estado.etapa, limdia()); e.semAcordo = true; }
     if (b.dataset.acao === 'sugerir') { e.prop = sugerirEscala(e.atual, estado.etapa); e.semAcordo = false; }
     if (!estado.emps.length) estado.exemplo = false;
     salvar();
@@ -437,7 +453,7 @@ const campoDia =
         const prop = proposta(e);
         const a = analisar({ atual: e.atual, prop }, cfg());
         return [e.mat, e.nome, e.cargo, e.setor, h(a.atual), h(a.tot), ...prop.map((v) => (v ? fmt(v, 'in') : 'folga')),
-          a.precisa ? 'Mudar' : 'Já atende', exigeAcordo(prop, estado.limdia) ? 'Sim' : 'Não'];
+          a.precisa ? 'Mudar' : 'Já atende', exigeAcordo(prop, limdia()) ? 'Sim' : 'Não'];
       });
       baixar(`nova-escala-${estado.etapa}h.xlsx`, planilha('Nova escala', [
         ['Matrícula', 'Nome', 'Cargo', 'Setor', 'Horas hoje', 'Horas na nova escala', ...DIAS, 'Situação', 'Exige acordo de compensação'],
