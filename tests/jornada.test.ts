@@ -14,6 +14,7 @@ import {
   exigeAcordo,
   resumoSemana,
   MODELOS_SEMANA,
+  limiteDiarioSemAcordo,
 } from '../src/lib/jornada';
 
 const h = (x: number) => Math.round(x * 60);
@@ -334,5 +335,32 @@ describe('resumoSemana and MODELOS_SEMANA', () => {
       const horas = Number(m.rotulo.match(/\((\d+)h\)/)![1]);
       expect(soma(m.dias)).toBe(horas * 60);
     }
+  });
+});
+
+describe('limiteDiarioSemAcordo (STF injunction, 42h transition)', () => {
+  it('is 8h24 in the 42h stage and 8h otherwise', () => {
+    expect(limiteDiarioSemAcordo(42)).toBe(504);
+    expect(limiteDiarioSemAcordo(40)).toBe(480);
+    expect(limiteDiarioSemAcordo(44)).toBe(480);
+  });
+
+  it('6x1 of 44h becomes 5 x 8h24 with no agreement and no warning in the 42h stage', () => {
+    const atual = semana(8, 8, 8, 8, 8, 4, 0);
+    const prop = sugerirEscala(atual, 42);
+    expect(prop).toEqual([504, 504, 504, 504, 504, 0, 0]);
+    expect(exigeAcordo(prop, limiteDiarioSemAcordo(42))).toBe(false);
+    const a = analisar({ atual, prop }, { etapa: 42, limdia: limiteDiarioSemAcordo(42) });
+    expect(a.alerts).toEqual([]);
+    expect(escalaSemAcordo(atual, 42, limiteDiarioSemAcordo(42))).toEqual(prop);
+  });
+
+  it('a day above 8h24 in the 42h stage still needs an agreement', () => {
+    const prop = semana(9, 9, 9, 9, 6, 0, 0); // 42h
+    expect(exigeAcordo(prop, limiteDiarioSemAcordo(42))).toBe(true);
+  });
+
+  it('8h24 is not allowed without agreement in the 40h stage', () => {
+    expect(exigeAcordo([504, 504, 480, 480, 432, 0, 0], limiteDiarioSemAcordo(40))).toBe(true);
   });
 });

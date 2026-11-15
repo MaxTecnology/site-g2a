@@ -63,6 +63,7 @@ Origem: análise técnica de 14/11/2026. Débitos que ficaram abertos estão em 
 - [x] SheetJS (950 KB) carregado só ao importar/exportar planilha
 - [x] Resumo para o WhatsApp sem nome de colaboradores
 - [x] Layout de cartões no celular (antes, tabela de 13 colunas)
+- [x] Etapa de 42h aceita 5 dias de até 8h24 sem acordo (liminar do STF de 12/11/2026); base legal reescrita citando a liminar
 
 ## Fase 4: SEO e limpeza
 
@@ -73,7 +74,7 @@ Origem: análise técnica de 14/11/2026. Débitos que ficaram abertos estão em 
 ## Pendências que dependem do cliente ou do dono do projeto
 
 - [ ] Validar com o escritório o texto das 8 perguntas do diagnóstico (`src/lib/prontidao.ts`)
-- [ ] Um contador confirmar a base legal do Controle de jornada (EC 141/2026, datas e limites; ver tech-debt, item 8)
+- [ ] Departamento pessoal validar o Controle de jornada e conferir o resultado do referendo da liminar no STF (ver tech-debt, item 8)
 - [ ] Preencher os números reais, o horário e o CRC em `src/data/site.ts`
 - [ ] Depois do deploy, rodar `npm run directus:setup` e colocar o token em `DIRECTUS_TOKEN`
 

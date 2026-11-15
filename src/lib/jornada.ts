@@ -40,6 +40,13 @@ export type Analise = {
 export const soma = (a: readonly (number | null | undefined)[]) => a.reduce<number>((x, y) => x + (y || 0), 0);
 export const diasTrabalhados = (a: readonly number[]) => a.reduce((n, v) => n + (v > 0 ? 1 : 0), 0);
 export const limiteSemanal = (etapa: number) => etapa * 60;
+/**
+ * Longest day allowed without a compensation agreement, in minutes.
+ * 42h stage: STF injunction (ADIs 8.041/8.042, 12/11/2026) allows 5 days of up to 8h24 with no
+ * overtime for the extra 24 min, when there is no collective agreement, until 15/12/2027.
+ * Other stages: CLT art. 58, 8h.
+ */
+export const limiteDiarioSemAcordo = (etapa: number) => (etapa === 42 ? 504 : 480);
 /** Up to 42h/week the rule requires 2 days off; above that, 1. */
 export const folgasMinimas = (etapa: number) => (etapa <= 42 ? 2 : 1);
 
