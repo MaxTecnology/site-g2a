@@ -2,14 +2,11 @@
 
 Prioridade: **P1** resolver já · **P2** próximo ciclo · **P3** quando houver oportunidade.
 
-## 1. [P1] Revogar as chaves da AbstractAPI da antiga calculadora
+## 1. ~~Chaves da AbstractAPI~~ (não se aplica)
 
-A calculadora foi removida, mas o bundle dela trazia em texto puro as API keys de validação de e-mail e telefone da AbstractAPI. Elas ficaram públicas no site e continuam no histórico do Git.
+A calculadora removida foi copiada de outro site. As chaves da AbstractAPI e o Google Forms que recebia os leads eram do autor original, não da G2A: não há nada a revogar do nosso lado.
 
-A AbstractAPI só era usada pela calculadora, para validar o e-mail e o telefone dos leads antes de enviá-los ao Google Forms. Nada no site usa o serviço hoje, então não há o que substituir.
-
-- **Revogar as duas chaves no painel da AbstractAPI**, ou encerrar a conta. Não é preciso gerar chaves novas. Limpar o histórico do Git não resolve, porque elas já foram servidas.
-- Fechar o Google Forms que recebia os leads da calculadora para novas respostas.
+Registro para a equipe: enquanto a calculadora esteve no ar, nome, e-mail, telefone e empresa dos visitantes da G2A iam para o formulário desse terceiro, sem aviso (ponto de LGPD) e sem que a G2A recebesse os contatos. Em 14/11/2026 o domínio já apontava para o VPS, ou seja, a calculadora não estava mais sendo servida. Não reutilizar ferramentas de terceiros sem revisar para onde vão os dados.
 
 ## 2. ~~Calculadora sem código-fonte~~ (resolvido)
 
