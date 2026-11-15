@@ -54,6 +54,16 @@ Origem: análise técnica de 14/11/2026. Débitos que ficaram abertos estão em 
 - [x] Sobre pronta para foto do escritório: basta preencher `site.fotoEscritorio`
 - [x] Links de serviço com a seta do logo; token `--color-navy-linha` para a linha apagada
 
+## Fase 5: Controle de jornada simplificado
+
+- [x] Cadastro de colaboradores direto na tela, com semanas prontas (planilha virou opção recolhida)
+- [x] Um cartão por colaborador com o que muda em frase ("Hoje: 44h em 6 dias · Nova escala: 42h em 5 dias")
+- [x] Acordo de compensação explicado como escolha, com "opção sem acordo" (até 8h/dia, semana menor)
+- [x] Aba "Controle da semana" removida (registro de jornada é função do ponto eletrônico)
+- [x] SheetJS (950 KB) carregado só ao importar/exportar planilha
+- [x] Resumo para o WhatsApp sem nome de colaboradores
+- [x] Layout de cartões no celular (antes, tabela de 13 colunas)
+
 ## Fase 4: SEO e limpeza
 
 - [x] `/sitemap-avisos.xml` dinâmico com a home, `/avisos` e os avisos publicados, referenciado no `sitemap-index.xml`
@@ -63,6 +73,7 @@ Origem: análise técnica de 14/11/2026. Débitos que ficaram abertos estão em 
 ## Pendências que dependem do cliente ou do dono do projeto
 
 - [ ] Validar com o escritório o texto das 8 perguntas do diagnóstico (`src/lib/prontidao.ts`)
+- [ ] Um contador confirmar a base legal do Controle de jornada (EC 141/2026, datas e limites; ver tech-debt, item 8)
 - [ ] Preencher os números reais, o horário e o CRC em `src/data/site.ts`
 - [ ] Depois do deploy, rodar `npm run directus:setup` e colocar o token em `DIRECTUS_TOKEN`
 

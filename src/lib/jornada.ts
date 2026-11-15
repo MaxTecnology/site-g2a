@@ -119,6 +119,40 @@ export function sugerirEscala(atual: Escala, etapa: number): Escala {
   return out;
 }
 
+/**
+ * Alternative that needs no compensation agreement: same working days as the suggestion, but no
+ * day above `limdia` (CLT art. 58: 8h). The week may end up shorter than the legal limit, e.g.
+ * 44h in 6 days under the 42h rule becomes 40h (5 x 8h) instead of 42h (5 x 8h24).
+ */
+export function escalaSemAcordo(atual: Escala, etapa: number, limdia: number): Escala {
+  const base = sugerirEscala(atual, etapa);
+  const dias = base.map((v, i) => (v > 0 ? i : -1)).filter((i) => i >= 0);
+  if (!dias.length) return base;
+  const meta = soma(base);
+  const porDia = Math.floor(meta / dias.length);
+  if (porDia + (meta % dias.length ? 1 : 0) <= limdia) return base;
+  const out = [0, 0, 0, 0, 0, 0, 0];
+  for (const d of dias) out[d] = Math.min(limdia, porDia);
+  return out;
+}
+
+/** True when some day of the proposal is above `limdia` but still within the 10h legal cap. */
+export const exigeAcordo = (prop: Escala, limdia: number) => prop.some((v) => v > limdia && v <= MAX_DIA_MIN);
+
+/** Ready-made weeks for the "add employee" form (minutes, Mon..Sun). */
+export const MODELOS_SEMANA: readonly { rotulo: string; dias: Escala }[] = [
+  { rotulo: 'Seg a sex 8h + sáb 4h (44h)', dias: [480, 480, 480, 480, 480, 240, 0] },
+  { rotulo: 'Seg a sáb 7h20 (44h)', dias: [440, 440, 440, 440, 440, 440, 0] },
+  { rotulo: 'Seg a sex 8h48 (44h)', dias: [528, 528, 528, 528, 528, 0, 0] },
+  { rotulo: 'Seg a sex 8h (40h)', dias: [480, 480, 480, 480, 480, 0, 0] },
+];
+
+/** "44h em 6 dias" */
+export function resumoSemana(e: Escala): string {
+  const n = diasTrabalhados(e);
+  return `${fmt(soma(e))} em ${n} ${n === 1 ? 'dia' : 'dias'}`;
+}
+
 /** Compares the current and the proposed schedule against the weekly rule. */
 export function analisar(e: { atual: Escala; prop: Escala }, cfg: Config): Analise {
   const lim = limiteSemanal(cfg.etapa);
@@ -211,7 +245,8 @@ export function linhaParaColaborador(row: Linha, indice: number): ResultadoLinha
   let atual: Escala;
   if (porDia.every((v) => v === undefined)) {
     const semanal = parseH(pegar(row, ['jornadasemanal', 'horassemanais', 'cargahoraria', 'jornada', 'cargasemanal']));
-    if (!semanal || Number.isNaN(semanal)) return { semHoras: nome };
+    if (Number.isNaN(semanal)) return { invalido: nome };
+    if (!semanal) return { semHoras: nome };
     if (semanal > 7 * MIN_POR_DIA) return { invalido: nome };
     const diasInformados = parseInt(String(pegar(row, COLUNAS_DIAS, true) ?? ''), 10);
     const dias = diasInformados >= 1 && diasInformados <= 7 ? diasInformados : semanal >= SEMANA_44H ? 6 : 5;
