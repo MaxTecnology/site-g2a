@@ -13,6 +13,8 @@
   --color-pedra: #e9ecf2;
   --color-tinta: #1a1f36;
   --color-cinza: #5a6178;
+  /* The brand line where it is still "ahead": white at 10% over navy, as a solid colour. */
+  --color-navy-linha: #323d73;
 }
 
 @layer base {

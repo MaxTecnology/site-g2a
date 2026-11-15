@@ -1,0 +1,164 @@
+---
+import { PERGUNTAS } from '../lib/prontidao';
+
+const OPCOES = [
+  { valor: 'sim', rotulo: 'Sim' },
+  { valor: 'nao', rotulo: 'Não' },
+  { valor: 'naosei', rotulo: 'Não sei' },
+] as const;
+---
+
+<section id="diagnostico" class="scroll-mt-24 bg-pedra py-16 md:py-24" aria-labelledby="diagnostico-titulo">
+  <div class="container-g2a grid gap-12 lg:grid-cols-[1fr_1.6fr] lg:gap-20">
+    <div class="self-start lg:sticky lg:top-28">
+      <h2 id="diagnostico-titulo" class="titulo text-4xl text-navy md:text-5xl">A sua empresa está pronta para a reforma?</h2>
+      <p class="mt-5 max-w-md text-cinza">
+        São {PERGUNTAS.length} perguntas, uns 2 minutos. No fim você vê o que falta ajustar, em ordem de prioridade. Nenhum dado sai do seu
+        navegador: o resultado só chega até nós se você quiser enviá-lo.
+      </p>
+
+      <div class="mt-8 max-w-md" aria-hidden="true">
+        <div class="flex justify-between text-sm text-cinza">
+          <span>Progresso</span>
+          <span><b class="text-navy" data-progresso-num>0</b> de {PERGUNTAS.length}</span>
+        </div>
+        <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-white">
+          <div class="h-full w-0 rounded-full bg-ciano transition-[width] duration-300 motion-reduce:transition-none" data-progresso-barra></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <form class="space-y-3" data-diagnostico novalidate autocomplete="off">
+        {
+          PERGUNTAS.map((p) => (
+            <fieldset class="rounded-lg bg-white p-5 md:p-6">
+              <legend class="contents">
+                <span class="block text-sm font-semibold text-ciano-escuro">{p.tema}</span>
+                <span class="mt-2 block font-medium text-navy">{p.pergunta}</span>
+              </legend>
+              <div class="mt-4 grid grid-cols-3 gap-2 sm:max-w-sm">
+                {OPCOES.map((o) => (
+                  <label class="cursor-pointer rounded-md px-3 py-2.5 text-center text-sm font-semibold text-navy ring-1 ring-navy/15 transition-colors hover:bg-pedra has-checked:bg-navy has-checked:text-white has-checked:ring-navy has-focus-visible:outline-3 has-focus-visible:outline-offset-2 has-focus-visible:outline-ciano">
+                    <input type="radio" name={p.id} value={o.valor} class="sr-only" />
+                    {o.rotulo}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          ))
+        }
+      </form>
+
+      <div class="mt-6 scroll-mt-28 rounded-lg bg-navy p-6 text-white focus:outline-none md:p-8" data-resultado hidden tabindex="-1" aria-live="polite">
+        <div class="flex flex-wrap items-end gap-x-6 gap-y-2">
+          <p class="numero text-7xl text-ceu"><span data-r-pontuacao></span><span class="text-4xl">%</span></p>
+          <div class="pb-1">
+            <p class="text-sm text-white/70">Nível de preparo</p>
+            <p class="titulo-medio text-2xl" data-r-nivel></p>
+          </div>
+        </div>
+        <p class="mt-4 max-w-prose text-white/80" data-r-texto></p>
+
+        <div data-r-pendencias-bloco>
+          <h3 class="mt-8 font-semibold">O que fazer, nesta ordem</h3>
+          <ol class="mt-4 space-y-3" data-r-pendencias></ol>
+        </div>
+
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a
+            href="#"
+            target="_blank"
+            rel="noopener"
+            data-r-whatsapp
+            class="rounded-md bg-ciano px-5 py-3 font-semibold text-navy-deep hover:bg-ceu"
+          >
+            Conversar sobre o resultado no WhatsApp
+          </a>
+          <button type="button" data-r-refazer class="rounded-md px-5 py-3 font-semibold text-white ring-1 ring-white/30 hover:bg-white/10">
+            Refazer
+          </button>
+        </div>
+        <p class="mt-6 text-xs text-white/60">
+          Orientação geral, não substitui a análise do caso da empresa. Regulamentos e alíquotas ainda podem mudar.
+        </p>
+      </div>
+
+      <p class="mt-6 text-sm text-cinza" data-faltam>Responda todas as perguntas para ver o resultado.</p>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { avaliar, mensagemWhatsapp, NIVEIS, PERGUNTAS, type Resposta } from '../lib/prontidao';
+  import { whatsappLink } from '../data/site';
+
+  const form = document.querySelector<HTMLFormElement>('[data-diagnostico]');
+  const painel = document.querySelector<HTMLElement>('[data-resultado]');
+  if (form && painel) {
+    const $ = <T extends Element>(sel: string) => painel.querySelector<T>(sel)!;
+    const faltam = document.querySelector<HTMLElement>('[data-faltam]')!;
+    const progNum = document.querySelector<HTMLElement>('[data-progresso-num]')!;
+    const progBarra = document.querySelector<HTMLElement>('[data-progresso-barra]')!;
+    let jaMostrou = false;
+
+    const respostas = () => {
+      const d = new FormData(form);
+      return Object.fromEntries(PERGUNTAS.map((p) => [p.id, d.get(p.id) as Resposta | null]).filter(([, v]) => v));
+    };
+
+    function render() {
+      const r = avaliar(respostas());
+      progNum.textContent = String(r.respondidas);
+      progBarra.style.width = `${(r.respondidas / PERGUNTAS.length) * 100}%`;
+      painel!.hidden = !r.completo;
+      faltam.hidden = r.completo;
+      if (!r.completo) {
+        jaMostrou = false;
+        return;
+      }
+
+      $('[data-r-pontuacao]').textContent = String(r.pontuacao);
+      $('[data-r-nivel]').textContent = NIVEIS[r.nivel].titulo;
+      $('[data-r-texto]').textContent = NIVEIS[r.nivel].texto;
+      $<HTMLElement>('[data-r-pendencias-bloco]').hidden = r.pendencias.length === 0;
+      const lista = $('[data-r-pendencias]');
+      lista.replaceChildren(
+        ...r.pendencias.map((p, i) => {
+          const li = document.createElement('li');
+          li.className = 'flex gap-4';
+          const n = document.createElement('span');
+          n.className = 'numero text-2xl text-ceu';
+          n.textContent = String(i + 1);
+          const corpo = document.createElement('span');
+          const tema = document.createElement('b');
+          tema.className = 'block';
+          tema.textContent = p.resposta === 'naosei' ? `${p.tema} (a confirmar)` : p.tema;
+          const acao = document.createElement('span');
+          acao.className = 'text-sm text-white/75';
+          acao.textContent = p.acao;
+          corpo.append(tema, acao);
+          li.append(n, corpo);
+          return li;
+        }),
+      );
+      $<HTMLAnchorElement>('[data-r-whatsapp]').href = whatsappLink(mensagemWhatsapp(r));
+
+      // Move focus to the result only the first time it appears, not on every later change.
+      if (!jaMostrou) {
+        jaMostrou = true;
+        painel!.focus({ preventScroll: true });
+        painel!.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+      }
+    }
+
+    form.addEventListener('change', render);
+    $('[data-r-refazer]').addEventListener('click', () => {
+      form.reset();
+      render();
+      document.getElementById('diagnostico')?.scrollIntoView({ block: 'start' });
+      form.querySelector<HTMLInputElement>('input')?.focus({ preventScroll: true });
+    });
+    render();
+  }
+</script>

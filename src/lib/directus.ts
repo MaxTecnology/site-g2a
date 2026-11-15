@@ -66,14 +66,26 @@ export async function listarAvisos(opts: { limite?: number; categoria?: string }
   return { avisos: data ?? [], ok: data !== null };
 }
 
-export async function buscarAviso(slug: string): Promise<Aviso | null> {
+/** `ok: false` means Directus is unavailable, which is different from "notice not found". */
+export async function buscarAviso(slug: string): Promise<{ aviso: Aviso | null; ok: boolean }> {
   const data = await get<Aviso[]>('/items/avisos', {
     'filter[status][_eq]': 'published',
     'filter[slug][_eq]': slug,
     fields: [...CAMPOS_LISTA, 'conteudo'].join(','),
     limit: '1',
   });
-  return data?.[0] ?? null;
+  return { aviso: data?.[0] ?? null, ok: data !== null };
+}
+
+/** Lightweight list for the sitemap: only what a <url> entry needs. */
+export async function listarSlugsAvisos(): Promise<{ avisos: Pick<Aviso, 'slug' | 'publicado_em'>[]; ok: boolean }> {
+  const data = await get<Pick<Aviso, 'slug' | 'publicado_em'>[]>('/items/avisos', {
+    'filter[status][_eq]': 'published',
+    sort: '-publicado_em',
+    fields: 'slug,publicado_em',
+    limit: '5000',
+  });
+  return { avisos: data ?? [], ok: data !== null };
 }
 
 /** Larguras que a rota /arquivos aceita redimensionar (evita abuso do redimensionamento). */
@@ -88,7 +100,9 @@ export function urlArquivo(arq: Arquivo, opts: { largura?: (typeof LARGURAS)[num
   return `/arquivos/${arq.id}/${encodeURIComponent(arq.filename_download)}${q}`;
 }
 
-// Cache curto de "este arquivo pertence a um aviso publicado?"
+// Short cache for "does this file belong to a published notice?".
+// Kept at 60s so an unpublished notice stops serving its files quickly.
+const TTL_PUBLICO_MS = 60_000;
 const publicados = new Map<string, { ok: boolean; ate: number }>();
 
 export async function arquivoEhPublico(id: string): Promise<boolean> {
@@ -104,7 +118,7 @@ export async function arquivoEhPublico(id: string): Promise<boolean> {
   if (data === null) return false;
   const ok = data.length > 0;
   if (publicados.size > 2000) publicados.clear();
-  publicados.set(id, { ok, ate: Date.now() + 5 * 60_000 });
+  publicados.set(id, { ok, ate: Date.now() + TTL_PUBLICO_MS });
   return ok;
 }
 

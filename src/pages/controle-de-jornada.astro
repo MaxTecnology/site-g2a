@@ -154,33 +154,16 @@ import { whatsappLink } from '../data/site';
 </Base>
 
 <script is:inline src="/vendor/xlsx.full.min.js"></script>
-<script is:inline>
+<script>
+import {
+  DIAS as DAYS, fmt, parseH, soma as sum, horaValida, limiteSemanal, folgasMinimas,
+  sugerirEscala, analisar, linhaParaColaborador, esc,
+} from '../lib/jornada';
+
 (() => {
 "use strict";
-const DAYS = ["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"];
 const KEY = "planejador-jornada-5x2.v1";
 const $ = s => document.querySelector(s);
-
-/* ---------- horas ---------- */
-function fmt(min, opt) {
-  if (min == null || isNaN(min)) return "";
-  const neg = min < 0; min = Math.round(Math.abs(min));
-  const h = Math.floor(min / 60), m = min % 60;
-  let s = m ? `${h}h${String(m).padStart(2,"0")}` : `${h}h`;
-  if (opt === "in") s = m ? `${h}:${String(m).padStart(2,"0")}` : `${h}:00`;
-  return (neg ? "−" : "") + s;
-}
-function parseH(v) {
-  if (v == null) return 0;
-  if (typeof v === "number") { if (v <= 0) return 0; return Math.round(v < 1 ? v * 1440 : v * 60); }
-  let s = String(v).trim().toLowerCase().replace(/\s/g, "");
-  if (!s || s === "-" || s === "folga" || s === "0") return 0;
-  let m = s.match(/^(\d{1,3})[:h](\d{1,2})?m?(in)?$/);
-  if (m) return +m[1] * 60 + (m[2] ? +m[2] : 0);
-  m = s.match(/^(\d{1,3})(?:[.,](\d+))?h?$/);
-  if (m) return Math.round(parseFloat(m[1] + "." + (m[2] || "0")) * 60);
-  return NaN;
-}
 
 /* ---------- estado ---------- */
 let state = load() || demo();
@@ -200,42 +183,11 @@ function load() { try { const s = localStorage.getItem(KEY); return s ? JSON.par
 let saveT;
 function save() { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }, 250); }
 
-/* ---------- regras ---------- */
-const lim = () => state.etapa * 60;
-const folgasMin = () => (state.etapa <= 42 ? 2 : 1);
-const sum = a => a.reduce((x, y) => x + (y || 0), 0);
-const workDays = a => a.reduce((n, v) => n + (v > 0 ? 1 : 0), 0);
-
-function suggest(e) {
-  const atual = sum(e.atual), meta = Math.min(atual, lim());
-  const maxDias = 7 - folgasMin();
-  let days = e.atual.map((v, i) => (v > 0 ? i : -1)).filter(i => i >= 0);
-  if (!days.length) days = [0,1,2,3,4];
-  while (days.length > maxDias) {
-    // remove primeiro domingo, depois sábado, depois o dia com menos horas
-    let drop = days.includes(6) ? 6 : days.includes(5) ? 5 : days.reduce((a, b) => (e.atual[b] < e.atual[a] ? b : a));
-    days = days.filter(d => d !== drop);
-  }
-  const out = [0,0,0,0,0,0,0];
-  const unchanged = atual <= lim() && workDays(e.atual) <= maxDias;
-  if (unchanged) return e.atual.slice();
-  const total = Math.round(meta), base = Math.floor(total / days.length), extra = total - base * days.length;
-  days.forEach((d, k) => { out[d] = base + (k < extra ? 1 : 0); });
-  return out;
-}
+/* ---------- regras (src/lib/jornada.ts) ---------- */
+const folgasMin = () => folgasMinimas(state.etapa);
 function analyze(e) {
-  if (!e.prop) e.prop = suggest(e);
-  const atual = sum(e.atual), meta = Math.min(atual, lim()), tot = sum(e.prop);
-  const diasAt = workDays(e.atual), diasNv = workDays(e.prop);
-  const precisa = atual > lim() || 7 - diasAt < folgasMin();
-  const alerts = [];
-  if (tot > lim()) alerts.push(["crit", `Total acima de ${state.etapa}h`]);
-  if (7 - diasNv < folgasMin()) alerts.push(["crit", `Menos de ${folgasMin()} folgas`]);
-  const maxDia = Math.max(...e.prop);
-  if (maxDia > 600) alerts.push(["crit", "Dia acima de 10h"]);
-  else if (maxDia > state.limdia) alerts.push(["warn", `${fmt(maxDia)}/dia: exige acordo de compensação`]);
-  if (tot < meta - 5) alerts.push(["info", `${fmt(meta - tot)} abaixo da meta`]);
-  return { atual, meta, tot, diasAt, diasNv, precisa, reduzir: Math.max(0, atual - meta), alerts };
+  if (!e.prop) e.prop = sugerirEscala(e.atual, state.etapa);
+  return analisar(e, { etapa: state.etapa, limdia: state.limdia });
 }
 
 /* ---------- rotas ---------- */
@@ -284,7 +236,8 @@ function renderA() {
 $("#tbA").addEventListener("change", ev => {
   const t = ev.target; if (!t.matches("input.h")) return;
   const v = parseH(t.value);
-  if (isNaN(v) || v > 1440) { t.classList.add("bad"); return; }
+  if (!horaValida(v)) { t.classList.add("bad"); return; }
+  t.classList.remove("bad");
   const e = state.emps[+t.dataset.i]; e.prop[+t.dataset.d] = v;
   save(); const id = t.id; renderA(); const nx = document.getElementById(id); if (nx) nx.focus();
 });
@@ -336,7 +289,8 @@ function renderS() {
 $("#tbS").addEventListener("change", ev => {
   const t = ev.target; if (!t.matches("input.h")) return;
   const raw = t.value.trim(), v = raw === "" ? null : parseH(raw);
-  if (v !== null && (isNaN(v) || v > 1440)) { t.classList.add("bad"); return; }
+  if (v !== null && !horaValida(v)) { t.classList.add("bad"); return; }
+  t.classList.remove("bad");
   const wk = iso(week), e = state.emps[+t.dataset.i];
   state.lanc[wk] = state.lanc[wk] || {};
   const arr = state.lanc[wk][e.id] = state.lanc[wk][e.id] || [null,null,null,null,null,null,null];
@@ -359,31 +313,19 @@ $("#wDate").addEventListener("change", ev => { if (ev.target.value) { const [y, 
 $("#qS").addEventListener("input", renderS);
 
 /* ---------- IMPORTAR ---------- */
-const norm = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
-const DAYKEYS = [["seg","segunda","segundafeira"],["ter","terca","tercafeira"],["qua","quarta","quartafeira"],["qui","quinta","quintafeira"],["sex","sexta","sextafeira"],["sab","sabado"],["dom","domingo"]];
-function pick(row, names) { for (const k of Object.keys(row)) { const n = norm(k); if (names.some(x => n === x || n.startsWith(x))) return row[k]; } return undefined; }
 function importRows(rows) {
-  let novos = 0, upd = 0, skip = [];
+  let novos = 0, upd = 0;
+  const skip = [], invalidos = [];
   rows.forEach((r, i) => {
-    const nome = pick(r, ["nome","colaborador","funcionario","empregado"]);
-    if (!nome || !String(nome).trim()) return;
-    const mat = String(pick(r, ["matricula","mat","codigo","cod","id"]) ?? "").trim() || "L" + (i + 2);
-    let atual = DAYKEYS.map(keys => { const v = Object.keys(r).find(k => keys.includes(norm(k))); return v === undefined ? undefined : parseH(r[v]); });
-    if (atual.every(v => v === undefined)) {
-      const sem = parseH(pick(r, ["jornadasemanal","horassemanais","cargahoraria","jornada","cargasemanal"]));
-      const dias = parseInt(pick(r, ["diastrabalhados","dias","diasporsemana"])) || (sem > 2640 - 1 ? 6 : 5);
-      if (!sem || isNaN(sem)) { skip.push(String(nome)); return; }
-      atual = [0,0,0,0,0,0,0];
-      if (dias === 6 && sem === 2640) { atual = [480,480,480,480,480,240,0]; }
-      else { const b = Math.round(sem / dias / 5) * 5; for (let d = 0; d < Math.min(dias, 7); d++) atual[d] = b; atual[0] += sem - b * Math.min(dias, 7); }
-    } else {
-      atual = atual.map(v => (v === undefined || isNaN(v) ? 0 : v));
-    }
-    const emp = { id: mat, mat, nome: String(nome).trim(), cargo: String(pick(r, ["cargo","funcao"]) ?? "").trim(), setor: String(pick(r, ["setor","departamento","depto","area"]) ?? "").trim(), atual, prop: null };
-    const ex = state.emps.findIndex(e => e.mat === mat);
+    const out = linhaParaColaborador(r, i);
+    if (!out) return;
+    if ("semHoras" in out) { skip.push(out.semHoras); return; }
+    if ("invalido" in out) { invalidos.push(out.invalido); return; }
+    const emp = out.colaborador;
+    const ex = state.emps.findIndex(e => e.mat === emp.mat);
     if (ex >= 0) { state.emps[ex] = emp; upd++; } else { state.emps.push(emp); novos++; }
   });
-  return { novos, upd, skip };
+  return { novos, upd, skip, invalidos };
 }
 function handleFile(file) {
   const msg = $("#impMsg"); msg.className = "msg"; msg.textContent = "Lendo planilha…";
@@ -392,13 +334,13 @@ function handleFile(file) {
   rd.onload = () => {
     try {
       const wb = XLSX.read(new Uint8Array(rd.result), { type: "array" });
-      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "", raw: true });
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "", raw: false });
       if (state.exemplo) { state.emps = []; state.lanc = {}; state.exemplo = false; }
       const r = importRows(rows);
-      if (!r.novos && !r.upd) { msg.className = "msg err"; msg.textContent = "Nenhum colaborador encontrado. Confira se a planilha tem a coluna Nome e as horas (por dia ou Jornada semanal)."; render(); return; }
+      if (!r.novos && !r.upd) { msg.className = "msg err"; msg.textContent = (r.invalidos.length ? `Horas inválidas em: ${r.invalidos.slice(0, 5).join(", ")}. ` : "") + "Nenhum colaborador encontrado. Confira se a planilha tem a coluna Nome e as horas (por dia ou Jornada semanal)."; render(); return; }
       save(); render();
       msg.className = "msg ok";
-      msg.textContent = `${r.novos} colaborador(es) importado(s)${r.upd ? `, ${r.upd} atualizado(s)` : ""}.` + (r.skip.length ? ` Sem horas informadas: ${r.skip.slice(0, 5).join(", ")}${r.skip.length > 5 ? "…" : ""}.` : "") + " Veja a aba Análise.";
+      msg.textContent = `${r.novos} colaborador(es) importado(s)${r.upd ? `, ${r.upd} atualizado(s)` : ""}.` + (r.skip.length ? ` Sem horas informadas: ${r.skip.slice(0, 5).join(", ")}${r.skip.length > 5 ? "…" : ""}.` : "") + (r.invalidos.length ? ` Horas inválidas (não importados, confira a planilha): ${r.invalidos.slice(0, 5).join(", ")}${r.invalidos.length > 5 ? "…" : ""}.` : "") + " Veja a aba Análise.";
     } catch (e) { msg.className = "msg err"; msg.textContent = "Não consegui ler esse arquivo. Salve como .xlsx ou .csv e tente de novo."; }
   };
   rd.readAsArrayBuffer(file);
@@ -462,7 +404,6 @@ $("#btnExpS").addEventListener("click", () => {
 
 /* ---------- geral ---------- */
 function tile(l, v, s) { return `<div class="tile"><span>${l}</span><b>${v}</b>${s ? `<em>${s}</em>` : ""}</div>`; }
-function esc(s) { return String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
 $("#etapa").value = String(state.etapa || 42);
 $("#limdia").value = String(state.limdia || 480);
 $("#etapa").addEventListener("change", ev => { state.etapa = +ev.target.value; state.emps.forEach(e => e.prop = null); save(); render(); });

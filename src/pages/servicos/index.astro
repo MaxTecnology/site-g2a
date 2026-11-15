@@ -15,7 +15,7 @@ import { servicos, whatsappLink } from '../../data/site';
       {
         servicos.map((s) => (
           <li class="border-t-2 border-navy pt-6">
-            <h2 class="titulo-medio text-3xl text-navy">{s.nome}</h2>
+            <h2 class="titulo-medio text-3xl text-navy"><a href={`/servicos/${s.slug}`} class="hover:text-ciano-escuro">{s.nome}</a></h2>
             <p class="mt-3 text-cinza">{s.resumo}</p>
             <ul class="mt-5 space-y-2">
               {s.inclui.slice(0, 3).map((i) => (
@@ -26,8 +26,11 @@ import { servicos, whatsappLink } from '../../data/site';
               ))}
             </ul>
             <div class="mt-6 flex flex-wrap gap-x-6 gap-y-2">
-              <a href={`/servicos/${s.slug}`} class="font-semibold text-ciano-escuro underline decoration-ciano/30 underline-offset-4 hover:decoration-ciano">
+              <a href={`/servicos/${s.slug}`} class="group inline-flex items-center gap-2 font-semibold text-ciano-escuro">
                 Detalhes do serviço
+                <svg viewBox="0 0 24 24" class="size-5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
+                  <path d="M6 18 18 6M9 6h9v9" />
+                </svg>
               </a>
               <a href={whatsappLink(s.mensagemWhatsapp)} target="_blank" rel="noopener" class="font-semibold text-navy underline decoration-navy/20 underline-offset-4 hover:decoration-navy">
                 Pedir proposta

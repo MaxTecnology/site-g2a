@@ -10,7 +10,8 @@ export default defineConfig({
   // para refletir na hora o que a equipe publica no painel (Directus).
   output: 'static',
   adapter: node({ mode: 'standalone' }),
-  integrations: [sitemap()],
+  // Home and Avisos are on-demand, so they are listed by the dynamic /sitemap-avisos.xml.
+  integrations: [sitemap({ customSitemaps: ['https://g2asolucoescontabeis.com.br/sitemap-avisos.xml'] })],
   vite: { plugins: [tailwindcss()] },
   // URLs antigas do site em template continuam funcionando.
   redirects: {
@@ -20,5 +21,7 @@ export default defineConfig({
     '/reforma-tributaria.html': '/reforma-tributaria',
     '/portfolio.html': '/servicos',
     '/single.html': '/servicos',
+    // Old React simulator, replaced by the readiness check on the Reforma page.
+    '/calculadora.html': '/reforma-tributaria',
   },
 });

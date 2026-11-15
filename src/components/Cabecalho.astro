@@ -1,14 +1,20 @@
 ---
+import SetaMarca from './SetaMarca.astro';
+
 interface Props {
   titulo: string;
   intro?: string;
   trilha?: { href: string; label: string };
 }
 const { titulo, intro, trilha } = Astro.props;
+// The brand arrow sits bottom-right; skip it when the header carries extra content (e.g. the reform
+// timeline), where it would sit behind text.
+const comSeta = !Astro.slots.has('default');
 ---
 
-<section class="bg-navy text-white">
-  <div class="container-g2a py-14 md:py-20">
+<section class="relative overflow-hidden bg-navy text-white">
+  {comSeta && <SetaMarca class="pointer-events-none absolute -right-12 -bottom-20 hidden w-[24rem] lg:block" />}
+  <div class="relative container-g2a py-14 md:py-20">
     {
       trilha && (
         <p class="mb-5 text-sm">
@@ -18,7 +24,7 @@ const { titulo, intro, trilha } = Astro.props;
         </p>
       )
     }
-    <h1 class="titulo max-w-4xl text-4xl sm:text-5xl md:text-6xl">{titulo}</h1>
+    <h1 class="titulo max-w-4xl text-4xl sm:text-5xl md:text-6xl lg:max-w-[min(56rem,calc(100%-18rem))]">{titulo}</h1>
     {intro && <p class="mt-6 max-w-2xl text-lg text-white/80">{intro}</p>}
     <slot />
   </div>
