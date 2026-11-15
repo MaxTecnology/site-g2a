@@ -221,37 +221,15 @@ if (flows.length === 0) {
 // e entrega aos visitantes apenas avisos publicados e os arquivos deles.
 const policies = await api('GET', '/policies?limit=-1&fields=id,name');
 
-// With `restrita`, the given fields/filter are enforced even on an existing permission,
-// so re-running the script also tightens installs made by older versions of it.
-async function garantirPermissao(policy, collection, action, restrita) {
+// Directus Community license: a permission can only be "all fields, no filter". Field lists and
+// row filters (e.g. "only published") are RESOURCE_RESTRICTED (custom_permission_rules_enabled).
+// So publication is enforced by the site itself: every query filters status=published and the
+// /arquivos proxy only serves files that belong to a published notice.
+async function garantirPermissao(policy, collection, action) {
   const atuais = await api('GET', `/permissions?filter[policy][_eq]=${policy}&filter[collection][_eq]=${collection}&filter[action][_eq]=${action}`);
-  if (atuais.length) {
-    // Directus merges permissions: one leftover wide rule would undo the restriction.
-    if (restrita) for (const p of atuais) await api('PATCH', `/permissions/${p.id}`, restrita);
-    return;
-  }
-  await api('POST', '/permissions', { policy, collection, action, fields: ['*'], ...restrita });
+  if (atuais.length) return;
+  await api('POST', '/permissions', { policy, collection, action, fields: ['*'] });
 }
-
-// The site token can only read published notices and the fields the site renders.
-// If it leaks, drafts and panel internals stay out of reach.
-const PUBLICADO = { status: { _eq: 'published' } };
-const LEITURA_SITE = {
-  avisos: {
-    fields: ['id', 'status', 'titulo', 'slug', 'resumo', 'categoria', 'conteudo', 'publicado_em', 'capa', 'anexos'],
-    permissions: PUBLICADO,
-  },
-  avisos_anexos: {
-    fields: ['id', 'avisos_id', 'directus_files_id', 'sort'],
-    permissions: { avisos_id: PUBLICADO },
-  },
-  // TODO: Directus cannot filter files by reverse relation here; the site proxy
-  // (/arquivos) is what guarantees only files of published notices are served.
-  directus_files: {
-    fields: ['id', 'title', 'type', 'filesize', 'filename_download', 'width', 'height'],
-    permissions: {},
-  },
-};
 
 async function garantirPapel(nome, politica, descricao) {
   let pol = policies.find((p) => p.name === nome);
@@ -265,8 +243,8 @@ async function garantirPapel(nome, politica, descricao) {
 }
 
 const site = await garantirPapel('Site (somente leitura)', { icon: 'public', app: false }, 'Usado pelo servidor do site para ler os avisos');
-for (const [c, regra] of Object.entries(LEITURA_SITE)) await garantirPermissao(site.politica.id, c, 'read', regra);
-passo('leitura do site restrita a avisos publicados e campos usados');
+for (const c of ['avisos', 'avisos_anexos', 'directus_files']) await garantirPermissao(site.politica.id, c, 'read');
+passo('leitura do site configurada');
 
 const EMAIL_SITE = 'site@g2asolucoescontabeis.com.br';
 let usuarioSite = (await api('GET', `/users?filter[email][_eq]=${encodeURIComponent(EMAIL_SITE)}`))[0];

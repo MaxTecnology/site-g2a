@@ -5,7 +5,7 @@ Origem: análise técnica de 14/11/2026. Débitos que ficaram abertos estão em 
 ## Fase 1: segurança
 
 - [x] Sanitizar o HTML dos avisos antes do `set:html` (`src/lib/sanitize.ts`, allowlist com `sanitize-html`)
-- [x] Restringir o token do site no Directus: só avisos `published` e só os campos usados (`scripts/directus-setup.mjs`, aplicado também em instalações existentes)
+- [x] ~~Restringir o token do site no Directus~~: não é possível na licença Community (ver tech-debt, item 6); o site garante o filtro de publicados
 - [x] Rate limit por IP em todas as respostas (600/min geral, 180/min em `/arquivos`), configurável por env (`server.mjs`)
 - [x] Headers de segurança em páginas estáticas e SSR: CSP, HSTS (só via https), X-Frame-Options, Referrer-Policy, Permissions-Policy, COOP
 - [x] Cache curto para arquivos de avisos (5 min no navegador e 60 s na checagem de "publicado"), para que um aviso despublicado saia do ar rápido
@@ -64,7 +64,7 @@ Origem: análise técnica de 14/11/2026. Débitos que ficaram abertos estão em 
 
 - [ ] Validar com o escritório o texto das 8 perguntas do diagnóstico (`src/lib/prontidao.ts`)
 - [ ] Preencher os números reais, o horário e o CRC em `src/data/site.ts`
-- [ ] Depois do deploy, rodar de novo `npm run directus:setup` para aplicar as permissões restritas
+- [ ] Depois do deploy, rodar `npm run directus:setup` e colocar o token em `DIRECTUS_TOKEN`
 
 ## Validação após o deploy
 
@@ -75,6 +75,6 @@ curl -s https://g2asolucoescontabeis.com.br/sitemap-avisos.xml   # lista home, /
 docker compose logs db-backup | tail                              # "backup ok: ..."
 ```
 
-**Arquivos com o token real:** depois de rodar o `directus:setup`, abrir um aviso com imagem e PDF e conferir se a imagem redimensionada (`?w=900`) e o download do PDF funcionam. Se derem 403/404, o `/assets` do Directus precisa de mais campos de `directus_files` do que os 7 liberados em `LEITURA_SITE`; adicione os campos pedidos e rode o setup de novo.
+**Avisos com o token real:** depois de rodar o `directus:setup`, publicar um aviso com imagem e PDF e conferir que aparecem no site; um aviso em rascunho não pode aparecer nem ter seus arquivos acessíveis. (Fluxo validado contra Directus 12.6.1 local em 14/11/2026.)
 
 Teste manual: abrir `/reforma-tributaria#diagnostico` (responder tudo, refazer, botão do WhatsApp), `/controle-de-jornada` (importar planilha, editar célula, exportar) e `/contato` (mapa), com o console do navegador aberto, procurando erros de CSP.

@@ -31,9 +31,14 @@ O IP vem do `X-Forwarded-For` com `TRUSTED_PROXY_HOPS=1`. Isso só é seguro enq
 
 O painel (`painel.*`) não tem rate limit por IP, só `AUTH_LOGIN_ATTEMPTS`. O `RATE_LIMITER_*` global do Directus não serve: todas as leituras do site chegam do mesmo IP interno. Se necessário, usar um middleware do Traefik só no domínio do painel.
 
-## 6. [P3] Permissão de leitura de `directus_files` sem filtro por item
+## 6. [P3] Token do site sem restrição no Directus
 
-O token do site lê os metadados de qualquer arquivo (só os campos necessários). O Directus não filtra arquivos pela relação reversa com avisos publicados. O proxy `/arquivos` é o que garante que só arquivos de avisos publicados são entregues.
+Na licença Community do Directus 12, permissões com filtro de linha ou lista de campos são bloqueadas (`RESOURCE_RESTRICTED: custom_permission_rules_enabled`). O token do site lê todos os campos de `avisos`, `avisos_anexos` e `directus_files`, incluindo rascunhos.
+
+Quem garante que só o publicado chega ao visitante é o site: toda consulta filtra `status = published` e o proxy `/arquivos` só entrega arquivos de avisos publicados (testado contra Directus 12.6.1 real). Se o token vazar, rascunhos ficam legíveis.
+
+- Manter o token só no Dokploy; trocar se houver suspeita de vazamento (editar o usuário `site@...` no painel).
+- Se o plano do Directus mudar, voltar a restringir a leitura a `status = published`.
 
 ## 7. [P3] Conteúdo provisório
 
