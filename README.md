@@ -11,7 +11,7 @@ equipe ──> painel.g2asolucoescontabeis.com.br (Directus)
 
 O painel não expõe nada ao público. O site lê os avisos com um token só-leitura e entrega aos visitantes apenas os avisos com situação **Publicado** e os arquivos deles. Rascunhos e arquivos soltos devolvem 404.
 
-O token do site também é restrito no Directus: só lê avisos publicados e os campos que o site usa. O HTML dos avisos é sanitizado antes de ir para a página (`src/lib/sanitize.ts`).
+O HTML dos avisos é sanitizado antes de ir para a página (`src/lib/sanitize.ts`).
 
 Em produção o site roda por `server.mjs`, que envolve o servidor do Astro e adiciona a todas as respostas os headers de segurança (CSP, HSTS, X-Frame-Options...), o rate limit por IP e o `/healthz`.
 
@@ -57,7 +57,7 @@ Na home, os números com `placeholder: true` aparecem com contorno tracejado em 
    npm run directus:setup
    ```
    O script imprime o **token do site**. Coloque em `DIRECTUS_TOKEN` e faça redeploy.
-6. **Já rodou o setup antes desta versão?** Rode de novo: ele aplica as permissões restritas ao token do site sem mexer no resto.
+6. O setup pode ser rodado de novo sem problema: ele mantém o que já existe e completa o que faltar.
 7. **DNS**: o domínio hoje aponta para o GitHub Pages (arquivo `public/CNAME`). Troque os registros A/CNAME para o IP do VPS e desative o Pages no repositório.
 
 ## Como a equipe publica um aviso
@@ -81,4 +81,4 @@ Os dumps ficam no próprio VPS. Copiar para fora está em `docs/tech-debt.md`.
 
 ## Licença do Directus
 
-O Directus usa a BSL 1.1: o uso é gratuito para organizações com faturamento anual abaixo de US$ 5 milhões. O acesso público passa pelo site para que o painel fique fechado.
+O Directus usa a BSL 1.1: o uso é gratuito para organizações com faturamento anual abaixo de US$ 5 milhões. Na licença gratuita, permissões com filtro (por exemplo, "só avisos publicados") ou com lista de campos são recursos pagos: o token do site lê todos os campos de avisos, anexos e arquivos. Por isso o acesso público passa pelo site, que filtra o que é publicado e mantém o painel fechado. Guarde o token só no Dokploy.

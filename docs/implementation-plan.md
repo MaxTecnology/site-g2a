@@ -5,7 +5,7 @@ Origem: análise técnica de 14/11/2026. Débitos que ficaram abertos estão em 
 ## Fase 1: segurança
 
 - [x] Sanitizar o HTML dos avisos antes do `set:html` (`src/lib/sanitize.ts`, allowlist com `sanitize-html`)
-- [x] Restringir o token do site no Directus: só avisos `published` e só os campos usados (`scripts/directus-setup.mjs`, aplicado também em instalações existentes)
+- [x] ~~Restringir o token do site no Directus~~: não é possível na licença Community (ver tech-debt, item 6); o site garante o filtro de publicados
 - [x] Rate limit por IP em todas as respostas (600/min geral, 180/min em `/arquivos`), configurável por env (`server.mjs`)
 - [x] Headers de segurança em páginas estáticas e SSR: CSP, HSTS (só via https), X-Frame-Options, Referrer-Policy, Permissions-Policy, COOP
 - [x] Cache curto para arquivos de avisos (5 min no navegador e 60 s na checagem de "publicado"), para que um aviso despublicado saia do ar rápido
@@ -64,7 +64,7 @@ Origem: análise técnica de 14/11/2026. Débitos que ficaram abertos estão em 
 
 - [ ] Validar com o escritório o texto das 8 perguntas do diagnóstico (`src/lib/prontidao.ts`)
 - [ ] Preencher os números reais, o horário e o CRC em `src/data/site.ts`
-- [ ] Depois do deploy, rodar de novo `npm run directus:setup` para aplicar as permissões restritas
+- [ ] Depois do deploy, rodar `npm run directus:setup` e colocar o token em `DIRECTUS_TOKEN`
 
 ## Validação após o deploy
 
