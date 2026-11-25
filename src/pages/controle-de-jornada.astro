@@ -1,0 +1,87 @@
+---
+import Base from '../layouts/Base.astro';
+import Cabecalho from '../components/Cabecalho.astro';
+import { whatsappLink } from '../data/site';
+// Presentation page for the office's own working-hours system (the old in-browser planner was removed).
+
+const mensagem = 'Olá! Quero conhecer o sistema de controle de jornada da G2A e agendar uma demonstração.';
+
+const etapas = [
+  { data: '16/12/2026', texto: 'A jornada máxima cai de 44 para 42 horas semanais, com dois dias de descanso por semana.' },
+  { data: '16/12/2027', texto: 'A jornada máxima chega a 40 horas semanais, mantidos os dois dias de descanso.' },
+];
+
+// TODO: confirm with the office what the system actually covers before changing this list.
+const acompanha = [
+  'A escala de cada colaborador dentro do novo limite semanal',
+  'As horas trabalhadas e as duas folgas da semana',
+  'Os pontos de atenção antes que virem hora extra ou passivo trabalhista',
+  'As informações que o departamento pessoal usa para fechar a folha',
+];
+---
+
+<Base
+  titulo="Controle de jornada: fim da escala 6x1"
+  descricao="A G2A criou um sistema próprio de controle de jornada para ajudar as empresas na transição para o fim da escala 6x1. Peça uma demonstração."
+>
+  <Cabecalho
+    titulo="Um sistema para atravessar o fim da 6x1 com tranquilidade"
+    intro="A nova regra de jornada mexe com escala, ponto, folgas e folha ao mesmo tempo. Para apoiar os nossos clientes nessa mudança, a G2A desenvolveu um sistema próprio de controle de jornada."
+  />
+
+  <div class="container-g2a grid gap-14 py-16 md:py-24 lg:grid-cols-[1.6fr_1fr] lg:gap-20">
+    <div>
+      <h2 class="titulo-medio text-2xl text-navy">O que muda e quando</h2>
+      <ol class="mt-5 divide-y divide-pedra border-y border-pedra">
+        {
+          etapas.map((e) => (
+            <li class="grid gap-1 py-4 sm:grid-cols-[8rem_1fr] sm:gap-6">
+              <span class="numero font-semibold text-ciano-escuro">{e.data}</span>
+              <span>{e.texto}</span>
+            </li>
+          ))
+        }
+      </ol>
+
+      <h2 class="titulo-medio mt-12 text-2xl text-navy">O que o sistema acompanha</h2>
+      <ul class="mt-5 divide-y divide-pedra border-y border-pedra">
+        {
+          acompanha.map((i) => (
+            <li class="flex gap-4 py-4">
+              <svg class="mt-1 size-5 shrink-0 text-ciano" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+              {i}
+            </li>
+          ))
+        }
+      </ul>
+
+      <h2 class="titulo-medio mt-12 text-2xl text-navy">Feito por quem fecha a sua folha</h2>
+      <p class="mt-3 max-w-[60ch] text-lg">
+        O sistema nasceu dentro do nosso departamento pessoal, a partir das dúvidas que os clientes trazem todos os dias sobre a
+        nova jornada. Por isso ele conversa com a rotina do escritório: o que a sua empresa registra é o que a nossa equipe usa
+        para orientar e apurar a folha.
+      </p>
+    </div>
+
+    <aside class="self-start rounded-lg bg-navy p-8 text-white lg:sticky lg:top-28">
+      <h2 class="titulo-medio text-2xl">Peça uma demonstração</h2>
+      <p class="mt-3 text-white/75">
+        Mostramos o sistema funcionando e respondemos às dúvidas sobre a transição da sua equipe. Sem compromisso.
+      </p>
+      <a href={whatsappLink(mensagem)} target="_blank" rel="noopener" class="mt-6 block rounded-md bg-ciano px-5 py-3.5 text-center font-semibold text-navy-deep hover:bg-ceu">
+        Agendar demonstração no WhatsApp
+      </a>
+      <p class="mt-4 text-sm text-white/60">Respondemos em horário comercial.</p>
+    </aside>
+  </div>
+
+  <section class="border-t border-pedra">
+    <div class="container-g2a py-10">
+      <p class="max-w-[80ch] text-sm text-cinza">
+        Datas conforme a emenda constitucional que reduz a jornada e a decisão liminar do STF de 12/11/2026, ainda sujeita ao
+        referendo do plenário. Cada empresa deve conferir também a convenção coletiva da sua categoria.{' '}
+        <a href="/servicos/departamento-pessoal" class="text-ciano-escuro underline underline-offset-4">Conheça o nosso departamento pessoal</a>.
+      </p>
+    </div>
+  </section>
+</Base>

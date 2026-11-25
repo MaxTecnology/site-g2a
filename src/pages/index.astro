@@ -26,6 +26,12 @@ const ferramentas = [
     texto: 'Oito perguntas sobre nota fiscal, cadastro, preço e contratos. No fim, a lista do que falta ajustar, em ordem de prioridade.',
     acao: 'Fazer o diagnóstico',
   },
+  {
+    href: '/controle-de-jornada',
+    titulo: 'Controle de jornada para o fim da 6x1',
+    texto: 'Criamos um sistema próprio para acompanhar escalas, horas e folgas da equipe na nova regra. Peça uma demonstração.',
+    acao: 'Conhecer o sistema',
+  },
 ];
 
 // Numbers only go live when all of them are real; in dev the placeholders show with a dashed outline.
@@ -102,19 +108,17 @@ const mostrarNumeros = dev || numeros.every((n) => !n.placeholder);
   <section class="bg-pedra" aria-labelledby="ferramentas-titulo">
     <div class="container-g2a py-20 md:py-24">
       <div class="max-w-2xl">
-        <h2 id="ferramentas-titulo" class="titulo text-4xl text-navy md:text-5xl">Ferramenta gratuita para o empresário</h2>
-        <p class="mt-4 text-cinza">Feita pela nossa equipe para a mudança que mais chega ao escritório. Não pede cadastro.</p>
+        <h2 id="ferramentas-titulo" class="titulo text-4xl text-navy md:text-5xl">Ferramentas da G2A para o empresário</h2>
+        <p class="mt-4 text-cinza">Feitas pela nossa equipe para as duas mudanças que mais chegam ao escritório: a Reforma Tributária e o fim da escala 6x1.</p>
       </div>
-      <ul class="mt-12 grid gap-px overflow-hidden rounded-lg bg-navy/10">
+      <ul class="mt-12 grid gap-px overflow-hidden rounded-lg bg-navy/10 md:grid-cols-2">
         {
           ferramentas.map((f) => (
             <li class="bg-white">
-              <a href={f.href} class="group flex h-full flex-col p-8 md:flex-row md:items-end md:justify-between md:gap-12 md:p-10">
-                <span class="block">
-                  <span class="titulo-medio block text-3xl text-navy">{f.titulo}</span>
-                  <span class="mt-4 block max-w-[52ch] text-cinza">{f.texto}</span>
-                </span>
-                <span class="mt-auto inline-flex shrink-0 items-center gap-2 pt-8 font-semibold text-ciano-escuro md:mt-0 md:pt-0">
+              <a href={f.href} class="group flex h-full flex-col p-8 md:p-10">
+                <span class="titulo-medio block text-3xl text-navy">{f.titulo}</span>
+                <span class="mt-4 block max-w-[46ch] text-cinza">{f.texto}</span>
+                <span class="mt-auto inline-flex items-center gap-2 pt-8 font-semibold text-ciano-escuro">
                   {f.acao}
                   <svg viewBox="0 0 24 24" class="size-5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
                     <path d="M6 18 18 6M9 6h9v9" />

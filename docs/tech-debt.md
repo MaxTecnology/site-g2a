@@ -46,7 +46,7 @@ Quem garante que só o publicado chega ao visitante é o site: toda consulta fil
 
 ## 8. ~~Base legal do Controle de jornada~~ (resolvido)
 
-O Controle de jornada foi removido do site em 25/11/2026: o escritório passou a usar um sistema próprio. `/controle-de-jornada` redireciona para `/servicos/departamento-pessoal`. O código está no histórico (tag `v1-astro-directus`).
+O planejador de jornada foi removido do site em 25/11/2026: o escritório passou a usar um sistema próprio. `/controle-de-jornada` agora apresenta esse sistema e pede o contato para uma demonstração. O código está no histórico (tag `v1-astro-directus`).
 
 ## 9. [P3] Identificadores e comentários em português
 

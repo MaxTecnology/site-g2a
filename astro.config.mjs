@@ -23,7 +23,5 @@ export default defineConfig({
     '/single.html': '/servicos',
     // Old React simulator, replaced by the readiness check on the Reforma page.
     '/calculadora.html': '/reforma-tributaria',
-    // Planner removed: the office now uses its own working-hours system.
-    '/controle-de-jornada': '/servicos/departamento-pessoal',
   },
 });

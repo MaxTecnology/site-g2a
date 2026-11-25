@@ -68,7 +68,8 @@ Origem: análise técnica de 14/11/2026. Débitos que ficaram abertos estão em 
 ## Fase 6: Controle de jornada removido
 
 - [x] Página, regras (`src/lib/jornada.ts`), testes e SheetJS removidos; o escritório usa um sistema próprio
-- [x] Menu, rodapé e home sem o link; `/controle-de-jornada` redireciona (301) para `/servicos/departamento-pessoal`
+- [x] `/controle-de-jornada` virou a página de apresentação do sistema próprio de jornada, com pedido de demonstração pelo WhatsApp (menu, rodapé e home mantidos)
+- [ ] Confirmar com o escritório a lista do que o sistema faz (seção "O que o sistema acompanha")
 
 ## Fase 4: SEO e limpeza
 
