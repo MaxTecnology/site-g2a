@@ -65,6 +65,12 @@ Origem: análise técnica de 14/11/2026. Débitos que ficaram abertos estão em 
 - [x] Layout de cartões no celular (antes, tabela de 13 colunas)
 - [x] Etapa de 42h aceita 5 dias de até 8h24 sem acordo (liminar do STF de 12/11/2026); base legal reescrita citando a liminar
 
+## Fase 6: Controle de jornada removido
+
+- [x] Página, regras (`src/lib/jornada.ts`), testes e SheetJS removidos; o escritório usa um sistema próprio
+- [x] `/controle-de-jornada` virou a página de apresentação do sistema próprio de jornada, com pedido de demonstração pelo WhatsApp (menu, rodapé e home mantidos)
+- [ ] Confirmar com o escritório a lista do que o sistema faz (seção "O que o sistema acompanha")
+
 ## Fase 4: SEO e limpeza
 
 - [x] `/sitemap-avisos.xml` dinâmico com a home, `/avisos` e os avisos publicados, referenciado no `sitemap-index.xml`
@@ -74,7 +80,6 @@ Origem: análise técnica de 14/11/2026. Débitos que ficaram abertos estão em 
 ## Pendências que dependem do cliente ou do dono do projeto
 
 - [ ] Validar com o escritório o texto das 8 perguntas do diagnóstico (`src/lib/prontidao.ts`)
-- [ ] Departamento pessoal validar o Controle de jornada e conferir o resultado do referendo da liminar no STF (ver tech-debt, item 8)
 - [ ] Preencher os números reais, o horário e o CRC em `src/data/site.ts`
 - [ ] Depois do deploy, rodar `npm run directus:setup` e colocar o token em `DIRECTUS_TOKEN`
 
@@ -89,4 +94,4 @@ docker compose logs db-backup | tail                              # "backup ok: 
 
 **Avisos com o token real:** depois de rodar o `directus:setup`, publicar um aviso com imagem e PDF e conferir que aparecem no site; um aviso em rascunho não pode aparecer nem ter seus arquivos acessíveis. (Fluxo validado contra Directus 12.6.1 local em 14/11/2026.)
 
-Teste manual: abrir `/reforma-tributaria#diagnostico` (responder tudo, refazer, botão do WhatsApp), `/controle-de-jornada` (importar planilha, editar célula, exportar) e `/contato` (mapa), com o console do navegador aberto, procurando erros de CSP.
+Teste manual: abrir `/reforma-tributaria#diagnostico` (responder tudo, refazer, botão do WhatsApp), `/contato` (mapa), com o console do navegador aberto, procurando erros de CSP.

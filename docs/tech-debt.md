@@ -44,13 +44,9 @@ Quem garante que só o publicado chega ao visitante é o site: toda consulta fil
 
 `src/data/site.ts`: os `numeros` (`placeholder: true`), o `horario` e o `crc` ainda não têm os valores reais. Os números aparecem como "00" em produção.
 
-## 8. [P1] Base legal do Controle de jornada depende de liminar do STF
+## 8. ~~Base legal do Controle de jornada~~ (resolvido)
 
-Desde 15/11/2026 a ferramenta segue a liminar do ministro Flávio Dino (ADIs 8.041 e 8.042, 12/11/2026): 44h até 15/12/2026; 42h e 2 folgas a partir de 16/12/2026; 40h a partir de 16/12/2027. Na etapa de 42h, sem acordo ou convenção coletiva até 15/12/2026, são permitidos 5 dias de até 8h24 sem hora extra até 15/12/2027 (`limiteDiarioSemAcordo`). Nas outras etapas, 8h/dia sem acordo (CLT art. 58) e teto de 10h (art. 59).
-
-- A liminar está em referendo no plenário (julgamento até 16/11/2026) e foi contestada por centrais sindicais, que pedem que as 8h24 dependam de acordo coletivo. Se o plenário mudar a regra, ajustar `limiteDiarioSemAcordo`, a nota da transição nos cartões e o texto "Regras usadas" em `src/pages/controle-de-jornada.astro`.
-- O departamento pessoal deve validar a ferramenta antes da divulgação.
-- O número da emenda constitucional não aparece mais no site até ser confirmado.
+O planejador de jornada foi removido do site em 25/11/2026: o escritório passou a usar um sistema próprio. `/controle-de-jornada` agora apresenta esse sistema e pede o contato para uma demonstração. O código está no histórico (tag `v1-astro-directus`).
 
 ## 9. [P3] Identificadores e comentários em português
 

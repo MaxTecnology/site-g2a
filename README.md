@@ -23,11 +23,10 @@ Em produção o site roda por `server.mjs`, que envolve o servidor do Astro e ad
 | `src/pages/` | Páginas. Home, `/avisos` e `/arquivos` rodam sob demanda; o resto é pré-renderizado. |
 | `src/lib/directus.ts` | Leitura dos avisos e verificação dos arquivos. |
 | `src/lib/sanitize.ts` | Sanitização do HTML dos avisos (contra XSS). |
-| `src/lib/jornada.ts` | Regras do Controle de jornada (cálculos, sugestão de escala, importação). |
 | `server.mjs` + `server/http.mjs` | Entrypoint de produção: headers de segurança, rate limit e `/healthz`. |
 | `scripts/directus-setup.mjs` | Cria no Directus a coleção de avisos, o flow de slug, os papéis e as permissões. |
 | `src/lib/prontidao.ts` + `src/components/DiagnosticoReforma.astro` | Diagnóstico de prontidão para a Reforma (página `/reforma-tributaria#diagnostico`). Roda só no navegador. |
-| `tests/` | Testes (Vitest) das regras de jornada, do diagnóstico, da sanitização e do servidor. |
+| `tests/` | Testes (Vitest) do diagnóstico, da sanitização e do servidor. |
 | `docs/` | Plano de implementação e débito técnico. |
 
 ## Desenvolvimento
